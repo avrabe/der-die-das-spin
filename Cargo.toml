@@ -1,0 +1,18 @@
+[workspace]
+resolver = "2"
+
+    #"der-die-das-spin",
+
+members = [
+    "dewiktionary",
+    "dewiktionary-importer-cli",
+]
+
+[profile.release]
+lto = true
+#debug = true
+strip = "debuginfo"
+
+[workspace.dependencies]
+tracing = { version = "0.1.40", features = ["attributes"] }
+serde = { version = "1.0.190", features = ["derive"] }

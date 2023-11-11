@@ -1,0 +1,15 @@
+[package]
+name = "dewiktionary-importer-cli"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+parse_mediawiki_dump_reboot = "1.0.1"
+bzip2  = "0.4.4"
+tracing = { workspace = true }
+tracing-subscriber = "0.3.17"
+clap = { version = "4.4.7", features = ["cargo", "derive", "env"] }
+dewiktionary = { path = "../dewiktionary" }
