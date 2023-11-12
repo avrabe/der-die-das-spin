@@ -5,6 +5,7 @@ resolver = "2"
 
 members = [
     "dewiktionary",
+    "dewiktionary-diesel",
     "dewiktionary-importer-cli",
 ]
 
@@ -16,3 +17,7 @@ strip = "debuginfo"
 [workspace.dependencies]
 tracing = { version = "0.1.40", features = ["attributes"] }
 serde = { version = "1.0.190", features = ["derive"] }
+diesel = { version = "2.1.0", features = ["sqlite"] }
+# Fix to enable compiling on Windows without a missing sqlite3.lib.
+# Versions need to be in sync with diesel
+libsqlite3-sys = { version = "0.26.0", featurse = ["bundled_bindings"] }

@@ -7,8 +7,8 @@ use nom::sequence::{delimited, preceded, tuple};
 use nom::IResult;
 
 #[derive(PartialEq, Eq, Debug)]
-struct Genus {
-    genus: String,
+pub struct Genus {
+    pub genus: String,
 }
 impl Genus {
     fn parse(input: &str) -> IResult<&str, Self> {
@@ -26,8 +26,8 @@ impl Genus {
 }
 
 #[derive(PartialEq, Eq, Debug)]
-struct NominativSingular {
-    text: String,
+pub struct NominativSingular {
+    pub text: String,
 }
 
 impl NominativSingular {
@@ -205,8 +205,8 @@ impl AkkusativPlural {
 #[derive(PartialEq, Eq, Debug)]
 
 pub struct DeutschSubstantivUebersicht {
-    genus: Genus,
-    nominativ_singular: NominativSingular,
+    pub genus: Genus,
+    pub nominativ_singular: NominativSingular,
     nominativ_plural: NominativPlural,
     genitiv_singular: GenitivSingular,
     genitiv_plural: GenitivPlural,
