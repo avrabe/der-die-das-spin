@@ -1,20 +1,35 @@
-use anyhow::Result;
 use serde::Serialize;
-use spin_sdk::{
-    http::{Request, IntoResponse},
-    http_component,
-    sqlite::Connection,
+use spin_sdk::sqlite::Connection;
+
+use {
+    bindings::wasi::http::incoming_handler,
+    futures::SinkExt,
+    spin_sdk::{
+        http::{Fields, IncomingRequest, Method, OutgoingResponse, ResponseOutparam},
+        http_component,
+    },
 };
 
-#[http_component]
-fn handle_request(_req: Request) -> Result<impl IntoResponse> {
-    let connection = Connection::open_default()?;
+mod bindings {
+    wit_bindgen::generate!({
+        path: "../spin-fileserver/examples/wit",
+        world: "delegate",
+        with: {
+            "wasi:http/types@0.2.0-rc-2023-10-18": spin_sdk::wit::wasi::http::types,
+            "wasi:io/streams@0.2.0-rc-2023-10-18": spin_sdk::wit::wasi::io::streams,
+            "wasi:io/poll@0.2.0-rc-2023-10-18": spin_sdk::wit::wasi::io,
+        }
+    });
+}
+
+async fn h() -> Option<Vec<u8>> {
+    let connection = Connection::open_default().unwrap();
 
     let rowset = connection.execute(
         "SELECT nominativ_singular, genus FROM derdiedas
                    ORDER BY RANDOM() LIMIT 1",
         &[]
-    )?;
+    ).expect("msg");
 
     let todos: Vec<_> = rowset.rows().map(|row|
         DerDieDas {
@@ -23,9 +38,8 @@ fn handle_request(_req: Request) -> Result<impl IntoResponse> {
         }
     ).collect();
 
-    let body = Some(serde_json::to_vec(&todos)?);
-    let response = http::Response::builder().status(200).body(body)?;
-    Ok(response)
+    Some(serde_json::to_vec(&todos).unwrap())
+
 }
 
 // Helper for returning the query results as JSON
@@ -33,4 +47,36 @@ fn handle_request(_req: Request) -> Result<impl IntoResponse> {
 struct DerDieDas {
     nominativ_singular: String,
     genus: String,
+}
+
+
+
+#[http_component]
+async fn handle_request(request: IncomingRequest, response_out: ResponseOutparam) {
+    match (request.method(), request.path_with_query().as_deref()) {
+        (Method::Get, Some("/entry.json")) => {
+            let response = OutgoingResponse::new(
+                200,
+                &Fields::new(&[("content-type".to_string(), b"application/json".to_vec())]),
+            );
+
+            let mut body = response.take_body();
+
+            response_out.set(response);
+            let b = h().await.unwrap();
+
+            if let Err(e) = body.send(b).await {
+                eprintln!("Error sending payload: {e}");
+            }
+        }
+
+        (Method::Get, _) => {
+            // Delegate to spin-fileserver component
+            incoming_handler::handle(request, response_out.into_inner())
+        }
+
+        _ => {
+            response_out.set(OutgoingResponse::new(405, &Fields::new(&[])));
+        }
+    }
 }
