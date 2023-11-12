@@ -1,0 +1,56 @@
+/* Define a style for the body element */
+body {
+    /* Set the background color to light blue */
+    background-color: rgb(230, 173, 202);
+    /* Set the font family to Arial */
+    font-family: Arial, sans-serif;
+    }
+
+    /* Define a style for the h1 element */
+    h1 {
+    /* Set the text color to white */
+    color: white;
+    /* Set the text alignment to center */
+    text-align: center;
+    /* Set the font size to 36 pixels */
+    font-size: 36px;
+    }
+
+    /* Define a style for the p element */
+    p {
+    /* Set the text color to black */
+    color: black;
+    /* Set the text alignment to justify */
+    text-align: justify;
+    /* Set the font size to 18 pixels */
+    font-size: 18px;
+    }
+
+
+    /* Define a style for the span element with the class "die" */
+    div.falsch {
+    /* Set the text color to red */
+    color: red;
+    /* Set the font weight to bold */
+    font-weight: bold;
+    }
+
+    /* Define a style for the span element with the class "das" */
+    div.richtig {
+    /* Set the text color to green */
+    color: green;
+    /* Set the font weight to bold */
+    font-weight: bold;
+    }
+
+    /* Definiere einen Stil für das erste div-Element */
+    div:first-child {
+    /* Setze die Ausrichtung auf links */
+    float: left;
+    }
+
+    /* Definiere einen Stil für das zweite div-Element */
+    div:last-child {
+    /* Setze die Ausrichtung auf rechts */
+    float: right;
+    }

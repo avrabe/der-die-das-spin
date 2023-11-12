@@ -7,14 +7,17 @@ authors = ["Ralf Anton Beier <ralf_beier@me.com>"]
 description = ""
 
 [[trigger.http]]
-route = "/entry.json"
+route = "/..."
 component = "der-die-das"
 
 [component.der-die-das]
-source = "../target/wasm32-wasi/release/der_die_das.wasm"
+source = "../target/wasm32-wasi/release/composed.wasm"
 allowed_outbound_hosts = []
 sqlite_databases = ["default"]
+files = [{ source = "static", destination = "/" }]
 
 [component.der-die-das.build]
-command = "cargo build --target wasm32-wasi --release"
+command = "cargo component build --release && (cd ../spin-fileserver && cargo component build --release) && RUST_LOG=error wasm-tools compose ../target/wasm32-wasi/release/der_die_das.wasm -c compose.yml -o ../target/wasm32-wasi/release/composed.wasm"
+
+#command = "cargo build --target wasm32-wasi --release"
 watch = ["src/**/*.rs", "Cargo.toml"]
