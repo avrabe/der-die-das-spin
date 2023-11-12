@@ -1,5 +1,8 @@
 use clap::{crate_version, Parser};
 use dewiktionary::parser::DeutschSubstantivUebersicht;
+use dewiktionary_diesel::{create_entry, establish_connection};
+use diesel::sqlite::SqliteConnection;
+use dotenvy::dotenv;
 use tracing::{error, info};
 use tracing_subscriber::FmtSubscriber;
 
@@ -14,10 +17,13 @@ struct Opts {
     #[clap(
         short,
         long,
-        default_value = "dewiktionary-latest-pages-articles-multistream.xml.bz2",
-        env = "NEO4J_URI"
+        default_value = "dewiktionary-latest-pages-articles-multistream.xml.bz2"
     )]
     filename: String,
+
+    /// The path to the neo4j repository.
+    #[clap(short, long, env = "DATABASE_URL")]
+    database_url: String,
 }
 
 fn main() {
@@ -30,7 +36,7 @@ fn main() {
         .finish();
 
     tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
-
+    dotenv().ok();
     let opts: Opts = Opts::parse();
     info!("Starting dewiktionary-importer-cli {}", crate_version!());
     info!("Using file {}", opts.filename);
@@ -42,16 +48,19 @@ fn main() {
         }
         Ok(file) => std::io::BufReader::new(file),
     };
+    let connection = &mut establish_connection(&opts.database_url);
     if opts.filename.ends_with(".bz2") {
-        parse(std::io::BufReader::new(
-            bzip2::bufread::MultiBzDecoder::new(file),
-        ));
+        parse(
+            std::io::BufReader::new(bzip2::bufread::MultiBzDecoder::new(file)),
+            connection,
+        );
     } else {
-        parse(file);
+        parse(file, connection);
     }
 }
 
-fn parse(source: impl std::io::BufRead) {
+fn parse(source: impl std::io::BufRead, connection: &mut SqliteConnection) {
+    let _ = connection;
     let mut counter = 0;
     let mut gefundene_tabelle = 0;
     for result in parse_mediawiki_dump_reboot::parse(source) {
@@ -73,6 +82,7 @@ fn parse(source: impl std::io::BufRead) {
                         info!("Substantivtabelle gefunden");
                         info!("{:#?}", t);
                         gefundene_tabelle += 1;
+                        create_entry(connection, &t.nominativ_singular.text, &t.genus.genus);
                     }
                     None => {
                         //warn!("Keine Substantivtabelle gefunden");
