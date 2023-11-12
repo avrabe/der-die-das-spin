@@ -7,11 +7,11 @@ authors = ["Ralf Anton Beier <ralf_beier@me.com>"]
 description = ""
 
 [[trigger.http]]
-route = "/..."
+route = "/entry.json"
 component = "der-die-das"
 
 [component.der-die-das]
-source = "target/wasm32-wasi/release/der_die_das.wasm"
+source = "../target/wasm32-wasi/release/der_die_das.wasm"
 allowed_outbound_hosts = []
 sqlite_databases = ["default"]
 

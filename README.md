@@ -8,6 +8,11 @@ A simple web app to practice German articles (der, die, das). Select an article 
 <https://dumps.wikimedia.org/dewiktionary/latest/dewiktionary-latest-pages-articles-multistream.xml.bz2>
 
 ```sh
+# component tools https://github.com/fermyon/spin-fileserver/tree/main/examples/rust
+rustup target add wasm32-wasi
+cargo install cargo-component
+cargo install --locked --git https://github.com/dicej/wasm-tools --branch wasm-compose-resource-imports wasm-tools
+
 cargo install cargo-deny
 cargo install diesel_cli --no-default-features --features sqlite
 diesel setup

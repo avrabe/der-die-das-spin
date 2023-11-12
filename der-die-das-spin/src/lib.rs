@@ -1,12 +1,36 @@
-use spin_sdk::http::{IntoResponse, Request};
-use spin_sdk::http_component;
+use anyhow::Result;
+use serde::Serialize;
+use spin_sdk::{
+    http::{Request, IntoResponse},
+    http_component,
+    sqlite::Connection,
+};
 
-/// A simple Spin HTTP component.
 #[http_component]
-fn handle_der_die_das(req: Request) -> anyhow::Result<impl IntoResponse> {
-    println!("Handling request to {:?}", req.header("spin-full-url"));
-    Ok(http::Response::builder()
-        .status(200)
-        .header("content-type", "text/plain")
-        .body("Hello, Fermyon")?)
+fn handle_request(_req: Request) -> Result<impl IntoResponse> {
+    let connection = Connection::open_default()?;
+
+    let rowset = connection.execute(
+        "SELECT nominativ_singular, genus FROM derdiedas
+                   ORDER BY RANDOM() LIMIT 1",
+        &[]
+    )?;
+
+    let todos: Vec<_> = rowset.rows().map(|row|
+        DerDieDas {
+            nominativ_singular: row.get::<&str>("nominativ_singular").unwrap().to_owned(),
+            genus: row.get::<&str>("genus").unwrap().to_owned(),
+        }
+    ).collect();
+
+    let body = Some(serde_json::to_vec(&todos)?);
+    let response = http::Response::builder().status(200).body(body)?;
+    Ok(response)
+}
+
+// Helper for returning the query results as JSON
+#[derive(Serialize)]
+struct DerDieDas {
+    nominativ_singular: String,
+    genus: String,
 }
