@@ -23,7 +23,7 @@ body {
     /* Set the text alignment to justify */
     text-align: justify;
     /* Set the font size to 18 pixels */
-    font-size: 18px;
+    font-size:xx-large;
     }
 
 
@@ -33,7 +33,8 @@ body {
     color: red;
     /* Set the font weight to bold */
     font-weight: bold;
-    }
+    font-size:xx-large;
+}
 
     /* Define a style for the span element with the class "das" */
     div.richtig {
@@ -41,16 +42,30 @@ body {
     color: green;
     /* Set the font weight to bold */
     font-weight: bold;
+    font-size:xx-large;
+}
+    div.nomen {
+            text-transform: uppercase;
+            font-size:xx-large;
+        }
+
+
+    button.artikel {
+        text-transform: uppercase;
+        font-size:xx-large;
+        color: blue;
     }
 
-    /* Definiere einen Stil für das erste div-Element */
-    div:first-child {
-    /* Setze die Ausrichtung auf links */
-    float: left;
+    button.next {
+        text-transform: uppercase;
+        font-size:xx-large;
     }
 
-    /* Definiere einen Stil für das zweite div-Element */
-    div:last-child {
-    /* Setze die Ausrichtung auf rechts */
-    float: right;
+    div.container {
+        display:flex;    
+    }
+
+    div.wort {
+        font-size:xx-large;
+        flex-grow: 1;
     }
