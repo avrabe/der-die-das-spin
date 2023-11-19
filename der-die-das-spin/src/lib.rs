@@ -25,21 +25,23 @@ mod bindings {
 async fn h() -> Option<Vec<u8>> {
     let connection = Connection::open_default().unwrap();
 
-    let rowset = connection.execute(
-        "SELECT nominativ_singular, genus FROM derdiedas
+    let rowset = connection
+        .execute(
+            "SELECT nominativ_singular, genus FROM derdiedas
                    ORDER BY RANDOM() LIMIT 1",
-        &[]
-    ).expect("msg");
+            &[],
+        )
+        .expect("msg");
 
-    let todos: Vec<_> = rowset.rows().map(|row|
-        DerDieDas {
+    let todos: Vec<_> = rowset
+        .rows()
+        .map(|row| DerDieDas {
             nominativ_singular: row.get::<&str>("nominativ_singular").unwrap().to_owned(),
             genus: row.get::<&str>("genus").unwrap().to_owned(),
-        }
-    ).collect();
+        })
+        .collect();
 
     Some(serde_json::to_vec(&todos).unwrap())
-
 }
 
 // Helper for returning the query results as JSON
@@ -48,8 +50,6 @@ struct DerDieDas {
     nominativ_singular: String,
     genus: String,
 }
-
-
 
 #[http_component]
 async fn handle_request(request: IncomingRequest, response_out: ResponseOutparam) {
