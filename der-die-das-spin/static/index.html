@@ -25,20 +25,20 @@
 </head>
 <body>
     <h1>Der die das</h1>
-    <p><img src="/ms-icon-144x144.png"/></p>
-    <p>Finde den richtigen Artikel</p>
+    <p><img src="ms-icon-144x144.png"/></p>
     <!-- Add a button that calls the JavaScript function when clicked -->
-    <button onclick="loadJSON()">N&auml;chstes Wort</button>
+    <button class="next" onclick="loadJSON()">N&auml;chstes Wort</button>
     <div class="container">
-    <!-- Add some elements to display the JSON data -->
-    <div id="genus"></div> <div id="nominativ_singular" class="wort"></div>&uml;
-    <!-- Add an element to display an error message -->
-    <div id="error"></div>
+        <div id="genus"></div>
+        <div id="nominativ_singular" class="wort"></div>
     </div>
-    <div id="aktionsart">
-    <button class="der" onclick="reveal('Der')">Der</button>
-    <button class="die" onclick="reveal('Die')">Die</button>
-    <button class="das" onclick="reveal('Das')">Das</button>
+    <p><div id="aktionsart">
+    <button class="artikel" onclick="reveal('Der')">Der</button>
+    <button class="artikel" onclick="reveal('Die')">Die</button>
+    <button class="artikel" onclick="reveal('Das')">Das</button>
     </div>
-</body>
+    </p>
+    <p><div id="error"></div></p>
+
+  </body>
 </html>

@@ -30,7 +30,7 @@ function loadJSON() {
         } else if (data[0].genus === "n") {
             document.getElementById("genus").innerHTML = "Das"
         }
-            document.getElementById("nominativ_singular").innerHTML = data[0].nominativ_singular;
+            document.getElementById("nominativ_singular").innerHTML = "&nbsp;"+data[0].nominativ_singular;
       } else {
         // Display an error message
         document.getElementById("error").innerHTML = "Invalid JSON data";
