@@ -16,7 +16,7 @@ adapter = "../spin-fileserver/adapters/fd1e948d/wasi_snapshot_preview1.reactor.w
 [dependencies]
 anyhow = "1"
 http = "0.2"
-spin-sdk = { git = "https://github.com/fermyon/spin", tag = "v2.0.0" }
+spin-sdk = { git = "https://github.com/fermyon/spin", tag = "v2.1.0" }
 serde = { workspace = true}
 serde_json = "1.0"
 
