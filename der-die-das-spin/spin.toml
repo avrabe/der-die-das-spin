@@ -11,13 +11,12 @@ route = "/..."
 component = "der-die-das"
 
 [component.der-die-das]
-source = "../target/wasm32-wasi/release/composed.wasm"
+source = "../target/wasm32-wasip1/release/composed.wasm"
 allowed_outbound_hosts = []
 sqlite_databases = ["default"]
 files = [{ source = "static", destination = "/" }]
 
 [component.der-die-das.build]
-command = "cargo component build --release && (cd ../spin-fileserver && cargo component build --release) && RUST_LOG=error wasm-tools compose ../target/wasm32-wasi/release/der_die_das.wasm -c compose.yml -o ../target/wasm32-wasi/release/composed.wasm"
+command = "cargo component build --release && (cd ../spin-fileserver && cargo component build --release --target wasm32-wasip1) && RUST_LOG=error wac plug --plug ../spin-fileserver/target/wasm32-wasip1/release/spin_static_fs.wasm  ../target/wasm32-wasip1/release/der_die_das.wasm -o ../target/wasm32-wasip1/release/composed.wasm"
 
-#command = "cargo build --target wasm32-wasi --release"
 watch = ["src/**/*.rs", "Cargo.toml"]

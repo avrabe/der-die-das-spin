@@ -30,8 +30,12 @@ jobs:
       - run: rustup toolchain install stable --profile minimal
       - uses: Swatinem/rust-cache@v2
       - run: |
+          curl -fsSL https://developer.fermyon.com/downloads/install.sh | bash
+          cargo install cargo-component
+          cargo install wac-cli
           cargo check
-          cargo build --release
+          cargo build -p dewiktionary -p  dewiktionary-importer-cli -p  dewiktionary-diesel --release
+          cd der-die-das-spin && ../spin build
           
   cargo-deny:
     runs-on: ubuntu-latest
@@ -51,7 +55,7 @@ jobs:
            submodules: true
       - uses: EmbarkStudios/cargo-deny-action@v1      
         with:
-          command: --manifest-path dewiktionary-importer-cli/Cargo.toml check ${{ matrix.checks }}
+          command: check ${{ matrix.checks }}
 
   codecov-check:
     name: codecov-check
