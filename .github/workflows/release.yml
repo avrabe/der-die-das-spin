@@ -1,0 +1,169 @@
+name: Release
+
+on:
+  release:
+    types: [created]
+  push:
+    tags:
+      - 'v*.*.*'
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-and-release:
+    name: Build and Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          set-safe-directory: true
+          submodules: true
+
+      - name: Install Rust toolchain
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup target add wasm32-wasip1
+
+      - name: Setup Rust cache
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install Spin CLI
+        run: |
+          curl -fsSL https://developer.fermyon.com/downloads/install.sh | bash
+          echo "$HOME/.spin/bin" >> $GITHUB_PATH
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            VERSION=${GITHUB_REF#refs/tags/v}
+          else
+            VERSION=$(grep '^version' der-die-das-spin/Cargo.toml | head -1 | cut -d'"' -f2)
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Release version: $VERSION"
+
+      - name: Build all crates
+        run: |
+          cargo check
+          cargo build -p dewiktionary -p dewiktionary-importer-cli -p dewiktionary-diesel --release
+          cargo build --target wasm32-wasip1 --release -p der-die-das
+          cd der-die-das-spin && spin build
+
+      - name: Run tests
+        run: |
+          cargo test --target x86_64-unknown-linux-gnu --release
+
+      - name: Create release artifacts
+        run: |
+          mkdir -p release-artifacts
+
+          # Copy the WASM module
+          cp target/wasm32-wasip1/release/der_die_das.wasm release-artifacts/
+
+          # Copy Spin configuration
+          cp der-die-das-spin/spin.toml release-artifacts/
+
+          # Copy static files
+          cp -r der-die-das-spin/static release-artifacts/
+
+          # Create a tarball
+          cd release-artifacts
+          tar -czf der-die-das-spin-${{ steps.version.outputs.version }}.tar.gz \
+            der_die_das.wasm spin.toml static/
+          cd ..
+
+          # Create checksums
+          cd release-artifacts
+          sha256sum der-die-das-spin-${{ steps.version.outputs.version }}.tar.gz > checksums.txt
+          sha256sum der_die_das.wasm >> checksums.txt
+          cd ..
+
+      - name: Upload release artifacts
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: |
+            release-artifacts/der-die-das-spin-${{ steps.version.outputs.version }}.tar.gz
+            release-artifacts/checksums.txt
+            release-artifacts/der_die_das.wasm
+          body: |
+            ## 🦫 Der Die Das - Capybara Game Release ${{ steps.version.outputs.version }}
+
+            ### What's Included
+            - `der-die-das-spin-${{ steps.version.outputs.version }}.tar.gz` - Complete application package
+            - `der_die_das.wasm` - WebAssembly module
+            - `checksums.txt` - SHA256 checksums for verification
+
+            ### Quick Start
+            ```bash
+            # Download and extract
+            wget https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/der-die-das-spin-${{ steps.version.outputs.version }}.tar.gz
+            tar -xzf der-die-das-spin-${{ steps.version.outputs.version }}.tar.gz
+
+            # Run with Spin
+            spin up
+
+            # Open in browser
+            http://localhost:3000
+            ```
+
+            ### Features 🎮
+            - 🦫 Capybara & Roblox themed design
+            - 📚 Practice mode for learning
+            - ⏱️ Timed challenge mode
+            - 🎮 Multiplayer mode with session sharing
+            - 🇩🇪 Learn German articles (der/die/das) with all 8 cases
+
+            ### Requirements
+            - [Spin CLI](https://developer.fermyon.com/spin/install) version 6.0+
+            - (Optional) SQLite database with Wiktionary data
+
+            Made with 💖 for kids who love capybaras and Roblox!
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Optional: Deploy to Fermyon Cloud
+  # Uncomment this job if you want automatic deployment
+  # deploy-to-cloud:
+  #   name: Deploy to Fermyon Cloud
+  #   runs-on: ubuntu-latest
+  #   needs: build-and-release
+  #   if: startsWith(github.ref, 'refs/tags/')
+  #
+  #   steps:
+  #     - name: Checkout repository
+  #       uses: actions/checkout@v4
+  #       with:
+  #         set-safe-directory: true
+  #         submodules: true
+  #
+  #     - name: Install Rust toolchain
+  #       run: |
+  #         rustup toolchain install stable --profile minimal
+  #         rustup target add wasm32-wasip1
+  #
+  #     - name: Setup Rust cache
+  #       uses: Swatinem/rust-cache@v2
+  #
+  #     - name: Install Spin CLI
+  #       run: |
+  #         curl -fsSL https://developer.fermyon.com/downloads/install.sh | bash
+  #         echo "$HOME/.spin/bin" >> $GITHUB_PATH
+  #
+  #     - name: Build application
+  #       run: |
+  #         cargo build --target wasm32-wasip1 --release -p der-die-das
+  #         cd der-die-das-spin && spin build
+  #
+  #     - name: Deploy to Fermyon Cloud
+  #       run: |
+  #         cd der-die-das-spin
+  #         spin cloud deploy --readiness-timeout 300
+  #       env:
+  #         SPIN_AUTH_TOKEN: ${{ secrets.SPIN_AUTH_TOKEN }}
