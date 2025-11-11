@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Der Die Das - German Article Learning Game</title>
+    <title>🦫 Der Die Das - Capybara Deutsch Spiel!</title>
     <link rel="stylesheet" href="style.css">
     <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
     <link rel="apple-touch-icon" sizes="180x180" href="apple-icon-180x180.png">
@@ -13,70 +13,73 @@
     <div class="container">
         <header>
             <h1>Der Die Das</h1>
-            <p class="subtitle">Master German Articles & Cases</p>
+            <p class="subtitle">Lerne Deutsch mit Capybaras! 🦫✨</p>
         </header>
 
         <!-- Mode Selection Screen -->
         <div id="modeSelection" class="screen active">
-            <h2>Choose Your Game Mode</h2>
+            <h2>Wähle deinen Spiel-Modus!</h2>
             <div class="mode-grid">
                 <div class="mode-card" onclick="startPracticeMode()">
-                    <div class="mode-icon">📚</div>
-                    <h3>Practice Mode</h3>
-                    <p>Learn at your own pace</p>
+                    <div class="mode-icon">📚🦫</div>
+                    <h3>Übungs-Modus</h3>
+                    <p>Lerne in Ruhe mit den Capybaras!</p>
                 </div>
 
                 <div class="mode-card" onclick="startTimedMode()">
-                    <div class="mode-icon">⏱️</div>
-                    <h3>Timed Challenge</h3>
-                    <p>2 minutes - Get as many as you can!</p>
+                    <div class="mode-icon">⏱️🦫</div>
+                    <h3>Zeit-Challenge</h3>
+                    <p>2 Minuten - So viele wie möglich!</p>
                 </div>
 
                 <div class="mode-card" onclick="showCreateSession()">
-                    <div class="mode-icon">🎮</div>
-                    <h3>Create Multiplayer</h3>
-                    <p>Challenge a friend!</p>
+                    <div class="mode-icon">🎮🦫</div>
+                    <h3>Multiplayer Erstellen</h3>
+                    <p>Fordere einen Freund heraus!</p>
                 </div>
 
                 <div class="mode-card" onclick="showJoinSession()">
-                    <div class="mode-icon">🔗</div>
-                    <h3>Join Multiplayer</h3>
-                    <p>Join a friend's game</p>
+                    <div class="mode-icon">🔗🦫</div>
+                    <h3>Multiplayer Beitreten</h3>
+                    <p>Tritt einem Spiel bei!</p>
                 </div>
             </div>
         </div>
 
         <!-- Create Multiplayer Session Screen -->
         <div id="createSession" class="screen">
-            <h2>Create Multiplayer Game</h2>
+            <h2>Erstelle ein Capybara-Spiel!</h2>
             <div class="form-container">
-                <input type="text" id="createPlayerName" placeholder="Your Name" maxlength="20">
-                <button onclick="createMultiplayerSession()" class="btn-primary">Create Game</button>
-                <button onclick="backToModeSelection()" class="btn-secondary">Back</button>
+                <input type="text" id="createPlayerName" placeholder="🦫 Dein Name" maxlength="20">
+                <button onclick="createMultiplayerSession()" class="btn-primary">Spiel Erstellen</button>
+                <button onclick="backToModeSelection()" class="btn-secondary">Zurück</button>
             </div>
         </div>
 
         <!-- Join Multiplayer Session Screen -->
         <div id="joinSession" class="screen">
-            <h2>Join Multiplayer Game</h2>
+            <h2>Tritt einem Spiel bei!</h2>
             <div class="form-container">
-                <input type="text" id="joinPlayerName" placeholder="Your Name" maxlength="20">
+                <input type="text" id="joinPlayerName" placeholder="🦫 Dein Name" maxlength="20">
                 <input type="text" id="joinSessionId" placeholder="Session ID">
-                <button onclick="joinMultiplayerSession()" class="btn-primary">Join Game</button>
-                <button onclick="backToModeSelection()" class="btn-secondary">Back</button>
+                <button onclick="joinMultiplayerSession()" class="btn-primary">Beitreten</button>
+                <button onclick="backToModeSelection()" class="btn-secondary">Zurück</button>
             </div>
         </div>
 
         <!-- Waiting for Player Screen -->
         <div id="waitingScreen" class="screen">
-            <h2>Waiting for Opponent...</h2>
+            <h2>Warte auf Mitspieler... 🦫</h2>
             <div class="session-info">
-                <p>Share this Session ID:</p>
+                <p>Teile diese Session ID mit deinem Freund:</p>
                 <div class="session-id" id="displaySessionId"></div>
-                <button onclick="copySessionId()" class="btn-copy">Copy ID</button>
+                <button onclick="copySessionId()" class="btn-copy">ID Kopieren</button>
             </div>
             <div class="spinner"></div>
-            <button onclick="cancelMultiplayer()" class="btn-secondary">Cancel</button>
+            <p style="text-align: center; color: #8B4513; margin-top: 20px;">
+                Die Capybaras warten... 🦫💤
+            </p>
+            <button onclick="cancelMultiplayer()" class="btn-secondary">Abbrechen</button>
         </div>
 
         <!-- Game Screen -->
@@ -84,12 +87,12 @@
             <div class="game-header">
                 <div class="score-container">
                     <div class="score">
-                        <span class="score-label">Score:</span>
+                        <span class="score-label">🦫 Punkte:</span>
                         <span id="score">0</span>
                     </div>
                     <div id="timerDisplay" class="timer"></div>
                     <div id="player2Score" class="score player2-score hidden">
-                        <span class="score-label">Opponent:</span>
+                        <span class="score-label">🦫 Gegner:</span>
                         <span id="opponentScore">0</span>
                     </div>
                 </div>
@@ -103,32 +106,33 @@
             </div>
 
             <div class="article-buttons">
-                <button class="artikel-btn der-btn" onclick="reveal('Der')">Der</button>
-                <button class="artikel-btn die-btn" onclick="reveal('Die')">Die</button>
-                <button class="artikel-btn das-btn" onclick="reveal('Das')">Das</button>
+                <button class="artikel-btn der-btn" onclick="reveal('Der')">Der 💙</button>
+                <button class="artikel-btn die-btn" onclick="reveal('Die')">Die 💗</button>
+                <button class="artikel-btn das-btn" onclick="reveal('Das')">Das 💚</button>
             </div>
 
             <button id="nextButton" onclick="loadJSON()" class="btn-next">Nächstes Wort</button>
-            <button onclick="quitGame()" class="btn-secondary">Quit</button>
+            <button onclick="quitGame()" class="btn-secondary">Beenden</button>
         </div>
 
         <!-- Results Screen -->
         <div id="resultsScreen" class="screen">
-            <h2>Game Over!</h2>
+            <h2>Spiel Vorbei! 🦫🎉</h2>
             <div class="results-container">
                 <div class="final-score">
-                    <h3>Your Score</h3>
+                    <h3>Deine Punkte</h3>
                     <div class="score-big" id="finalScore">0</div>
+                    <p style="font-size: 24px; margin-top: 10px;">🦫 Super gemacht!</p>
                 </div>
                 <div id="multiplayerResults" class="multiplayer-results hidden">
                     <div class="final-score">
-                        <h3>Opponent Score</h3>
+                        <h3>Gegner Punkte</h3>
                         <div class="score-big" id="opponentFinalScore">0</div>
                     </div>
                     <div class="winner-announcement" id="winnerText"></div>
                 </div>
             </div>
-            <button onclick="backToModeSelection()" class="btn-primary">Play Again</button>
+            <button onclick="backToModeSelection()" class="btn-primary">Nochmal Spielen!</button>
         </div>
 
         <div id="error" class="error-message"></div>
