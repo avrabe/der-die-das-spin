@@ -16,12 +16,14 @@ Das Der-Die-Das Lernspiel ist jetzt **super niedlich** mit Capybaras und **super
 - **Wort-Anzeige**: Zwei Capybaras sitzen oben auf der Wort-Box
 - **Buttons**: Alle Buttons haben ein 🦫 Emoji vorne
 - **Nächstes Wort**: Button zeigt "Nächstes Wort 🦫"
+- **🆕 Beispiel Satz**: Neuer Button "🦫 Beispiel Satz" zeigt Kontext-Sätze!
 
 ### Capybara Animationen
 - **Richtige Antwort**: Capybara hüpft glücklich! 🦫🎉
 - **Falsche Antwort**: Capybara wackelt traurig 🦫💪
 - **Gewonnen**: Capybara mit Pokal! 🦫🏆
 - **Warten**: "Die Capybaras warten... 🦫💤"
+- **🆕 Denkt nach**: Capybara wackelt beim Satz-Generieren! 🦫💭
 
 ---
 

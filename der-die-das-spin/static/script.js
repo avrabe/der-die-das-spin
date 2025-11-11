@@ -260,6 +260,11 @@ function endMultiplayerGame() {
 
 // Core Game Logic
 function loadJSON() {
+    // Hide example sentence when loading new word
+    document.getElementById('exampleSentenceContainer').classList.add('hidden');
+    document.getElementById('exampleButton').textContent = '🦫 Beispiel Satz';
+    document.getElementById('exampleButton').disabled = false;
+
     const xhr = new XMLHttpRequest();
     xhr.open("GET", "/api/entry.json", true);
     xhr.onload = function () {
@@ -350,6 +355,48 @@ async function submitAnswer(correct) {
         });
     } catch (error) {
         console.error('Error submitting answer:', error);
+    }
+}
+
+// Example Sentence Feature
+async function showExampleSentence() {
+    const word = gameState.currentWord?.nominativ_singular;
+    if (!word) {
+        showError('Kein Wort ausgewählt!');
+        return;
+    }
+
+    const container = document.getElementById('exampleSentenceContainer');
+    const sentenceEl = document.getElementById('exampleSentence');
+    const button = document.getElementById('exampleButton');
+
+    // Disable button and show loading
+    button.disabled = true;
+    button.textContent = 'Denkt nach...';
+    sentenceEl.innerHTML = '<div class="loading-capybara">🦫</div>';
+    container.classList.remove('hidden');
+
+    try {
+        const response = await fetch(`/api/sentence/${encodeURIComponent(word)}`);
+
+        if (!response.ok) {
+            throw new Error('Fehler beim Laden des Satzes');
+        }
+
+        const data = await response.json();
+
+        // Animate text reveal
+        sentenceEl.textContent = data.sentence;
+
+        // Re-enable button with new text
+        button.textContent = '🦫 Noch ein Beispiel';
+        button.disabled = false;
+
+    } catch (error) {
+        console.error('Error loading sentence:', error);
+        sentenceEl.textContent = 'Ups! Der Capybara konnte keinen Satz finden. 😞';
+        button.textContent = '🦫 Nochmal versuchen';
+        button.disabled = false;
     }
 }
 

@@ -3,8 +3,11 @@ use serde::{Deserialize, Serialize};
 use spin_sdk::{
     http::{IntoResponse, Request, Response, Router},
     http_component,
+    key_value::Store,
     sqlite::{Connection, Value},
 };
+
+mod sentences;
 
 // Helper for returning the query results as JSON
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -43,6 +46,7 @@ fn handle_request(req: Request) -> Result<impl IntoResponse> {
     let mut router = Router::new();
 
     router.get("/api/entry.json", get_random_entry);
+    router.get("/api/sentence/:word", get_example_sentence);
     router.post("/api/session/create", create_session);
     router.post("/api/session/join", join_session);
     router.get("/api/session/:id", get_session);
@@ -72,6 +76,69 @@ fn get_random_entry(_req: Request, _params: spin_sdk::http::Params) -> Result<im
         .status(200)
         .header("content-type", "application/json")
         .body(serde_json::to_string(&entries)?)
+        .build())
+}
+
+/// Get an example sentence for a given word
+fn get_example_sentence(_req: Request, params: spin_sdk::http::Params) -> Result<impl IntoResponse> {
+    #[derive(Serialize)]
+    struct SentenceResponse {
+        word: String,
+        sentence: String,
+        cached: bool,
+    }
+
+    let word = params.get("word")
+        .ok_or_else(|| anyhow::anyhow!("Missing word parameter"))?;
+
+    // First, look up the genus for this word from the database
+    let connection = Connection::open_default()?;
+    let rowset = connection.execute(
+        "SELECT genus FROM derdiedas WHERE nominativ_singular = ? LIMIT 1",
+        &[Value::Text(word.to_string())],
+    )?;
+
+    let rows: Vec<_> = rowset.rows().collect();
+    let genus = rows.first()
+        .and_then(|row| row.get::<&str>("genus"))
+        .unwrap_or("m"); // Default to masculine if not found
+
+    // Try to get from cache first
+    let cache_key = format!("sentence:{}", word.to_lowercase());
+    let store = Store::open_default()?;
+
+    let (sentence, cached) = if let Ok(Some(data)) = store.get(&cache_key) {
+        // Got from cache
+        let cached_sentences: Vec<String> = serde_json::from_slice(&data)?;
+        // Return a random one from the cache
+        let idx = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)?
+            .as_secs() as usize % cached_sentences.len();
+        (cached_sentences[idx].clone(), true)
+    } else {
+        // Generate new sentences and cache them
+        let new_sentences = sentences::generate_sentences(word, genus, 5);
+        let sentence_texts: Vec<String> = new_sentences.iter()
+            .map(|s| s.sentence.clone())
+            .collect();
+
+        // Cache the sentences
+        let cache_data = serde_json::to_vec(&sentence_texts)?;
+        store.set(&cache_key, &cache_data)?;
+
+        (sentence_texts[0].clone(), false)
+    };
+
+    let response = SentenceResponse {
+        word: word.to_string(),
+        sentence,
+        cached,
+    };
+
+    Ok(Response::builder()
+        .status(200)
+        .header("content-type", "application/json")
+        .body(serde_json::to_string(&response)?)
         .build())
 }
 
@@ -191,10 +258,7 @@ fn get_session(_req: Request, params: spin_sdk::http::Params) -> Result<impl Int
     let rows: Vec<_> = rowset.rows().collect();
 
     if let Some(row) = rows.first() {
-        let player2_id = match row.get::<&str>("player2_id") {
-            Some(s) => Some(s.to_owned()),
-            None => None,
-        };
+        let player2_id = row.get::<&str>("player2_id").map(|s| s.to_owned());
 
         let session = GameSession {
             session_id: row.get::<&str>("session_id").unwrap().to_owned(),
