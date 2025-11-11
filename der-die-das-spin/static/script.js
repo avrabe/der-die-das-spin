@@ -245,13 +245,13 @@ function endMultiplayerGame() {
 
     const winnerText = document.getElementById('winnerText');
     if (gameState.score > gameState.opponentScore) {
-        winnerText.textContent = '🎉 You Win!';
+        winnerText.textContent = 'Du hast gewonnen! 🎉';
         winnerText.className = 'winner-announcement win';
     } else if (gameState.score < gameState.opponentScore) {
-        winnerText.textContent = 'Opponent Wins';
+        winnerText.textContent = 'Gegner gewinnt! Weiter üben! 💪';
         winnerText.className = 'winner-announcement lose';
     } else {
-        winnerText.textContent = "It's a Tie!";
+        winnerText.textContent = "Unentschieden! Gut gespielt! 🤝";
         winnerText.className = 'winner-announcement tie';
     }
 
@@ -355,7 +355,7 @@ async function submitAnswer(correct) {
 
 function showError(message) {
     const errorEl = document.getElementById("error");
-    errorEl.textContent = message;
+    errorEl.textContent = "🦫 " + message;
     errorEl.style.display = 'block';
     setTimeout(() => {
         errorEl.style.display = 'none';
