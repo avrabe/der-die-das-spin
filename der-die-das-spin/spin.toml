@@ -2,21 +2,28 @@ spin_manifest_version = 2
 
 [application]
 name = "der-die-das"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Ralf Anton Beier <ralf_beier@me.com>"]
-description = ""
+description = "Der Die Das learning game with single and multiplayer modes"
 
+# Main API component
 [[trigger.http]]
-route = "/..."
-component = "der-die-das"
+route = "/api/..."
+component = "der-die-das-api"
 
-[component.der-die-das]
-source = "../target/wasm32-wasip1/release/composed.wasm"
+[component.der-die-das-api]
+source = "target/wasm32-wasip1/release/der_die_das.wasm"
 allowed_outbound_hosts = []
 sqlite_databases = ["default"]
-files = [{ source = "static", destination = "/" }]
-
-[component.der-die-das.build]
-command = "cargo component build --release && (cd ../spin-fileserver && cargo component build --release --target wasm32-wasip1) && RUST_LOG=error wac plug --plug ../spin-fileserver/target/wasm32-wasip1/release/spin_static_fs.wasm  ../target/wasm32-wasip1/release/der_die_das.wasm -o ../target/wasm32-wasip1/release/composed.wasm"
-
+[component.der-die-das-api.build]
+command = "cargo build --target wasm32-wasip1 --release"
 watch = ["src/**/*.rs", "Cargo.toml"]
+
+# Static file server component
+[[trigger.http]]
+route = "/..."
+component = "static-server"
+
+[component.static-server]
+source = { url = "https://github.com/fermyon/spin-fileserver/releases/download/v0.3.0/spin_static_fs.wasm", digest = "sha256:96c76d9af86420b39eb6cd7be5550e3cb5d4cc4de572ce0fd1f6a29471536cb4" }
+files = [{ source = "static", destination = "/" }]
