@@ -82,7 +82,18 @@ fn parse(source: impl std::io::BufRead, connection: &mut SqliteConnection) {
                         info!("Substantivtabelle gefunden");
                         info!("{:#?}", t);
                         gefundene_tabelle += 1;
-                        create_entry(connection, &t.nominativ_singular.text, &t.genus.genus);
+                        create_entry(
+                            connection,
+                            &t.nominativ_singular.text,
+                            &t.genus.genus,
+                            Some(&t.nominativ_plural.text),
+                            Some(&t.genitiv_singular.text),
+                            Some(&t.genitiv_plural.text),
+                            Some(&t.dativ_singular.text),
+                            Some(&t.dativ_plural.text),
+                            Some(&t.akkusativ_singular.text),
+                            Some(&t.akkusativ_plural.text),
+                        );
                     }
                     None => {
                         //warn!("Keine Substantivtabelle gefunden");

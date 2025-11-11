@@ -49,8 +49,8 @@ impl NominativSingular {
 }
 
 #[derive(PartialEq, Eq, Debug)]
-struct NominativPlural {
-    text: String,
+pub struct NominativPlural {
+    pub text: String,
 }
 impl NominativPlural {
     fn parse(input: &str) -> IResult<&str, Self> {
@@ -71,8 +71,8 @@ impl NominativPlural {
 }
 
 #[derive(PartialEq, Eq, Debug)]
-struct GenitivSingular {
-    text: String,
+pub struct GenitivSingular {
+    pub text: String,
 }
 impl GenitivSingular {
     fn parse(input: &str) -> IResult<&str, Self> {
@@ -93,8 +93,8 @@ impl GenitivSingular {
 }
 
 #[derive(PartialEq, Eq, Debug)]
-struct GenitivPlural {
-    text: String,
+pub struct GenitivPlural {
+    pub text: String,
 }
 impl GenitivPlural {
     fn parse(input: &str) -> IResult<&str, Self> {
@@ -115,8 +115,8 @@ impl GenitivPlural {
 }
 
 #[derive(PartialEq, Eq, Debug)]
-struct DativSingular {
-    text: String,
+pub struct DativSingular {
+    pub text: String,
 }
 impl DativSingular {
     fn parse(input: &str) -> IResult<&str, Self> {
@@ -137,8 +137,8 @@ impl DativSingular {
 }
 
 #[derive(PartialEq, Eq, Debug)]
-struct DativPlural {
-    text: String,
+pub struct DativPlural {
+    pub text: String,
 }
 impl DativPlural {
     fn parse(input: &str) -> IResult<&str, Self> {
@@ -159,8 +159,8 @@ impl DativPlural {
 }
 
 #[derive(PartialEq, Eq, Debug)]
-struct AkkusativSingular {
-    text: String,
+pub struct AkkusativSingular {
+    pub text: String,
 }
 impl AkkusativSingular {
     fn parse(input: &str) -> IResult<&str, Self> {
@@ -181,8 +181,8 @@ impl AkkusativSingular {
 }
 
 #[derive(PartialEq, Eq, Debug)]
-struct AkkusativPlural {
-    text: String,
+pub struct AkkusativPlural {
+    pub text: String,
 }
 impl AkkusativPlural {
     fn parse(input: &str) -> IResult<&str, Self> {
@@ -207,13 +207,13 @@ impl AkkusativPlural {
 pub struct DeutschSubstantivUebersicht {
     pub genus: Genus,
     pub nominativ_singular: NominativSingular,
-    nominativ_plural: NominativPlural,
-    genitiv_singular: GenitivSingular,
-    genitiv_plural: GenitivPlural,
-    dativ_singular: DativSingular,
-    dativ_plural: DativPlural,
-    akkusativ_singular: AkkusativSingular,
-    akkusativ_plural: AkkusativPlural,
+    pub nominativ_plural: NominativPlural,
+    pub genitiv_singular: GenitivSingular,
+    pub genitiv_plural: GenitivPlural,
+    pub dativ_singular: DativSingular,
+    pub dativ_plural: DativPlural,
+    pub akkusativ_singular: AkkusativSingular,
+    pub akkusativ_plural: AkkusativPlural,
 }
 
 impl DeutschSubstantivUebersicht {

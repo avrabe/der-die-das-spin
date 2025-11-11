@@ -12,10 +12,28 @@ pub fn establish_connection(database_url: &str) -> SqliteConnection {
 
 use crate::models::NewEntry;
 
-pub fn create_entry(conn: &mut SqliteConnection, nominativ_singular: &str, genus: &str) {
+pub fn create_entry(
+    conn: &mut SqliteConnection,
+    nominativ_singular: &str,
+    genus: &str,
+    nominativ_plural: Option<&str>,
+    genitiv_singular: Option<&str>,
+    genitiv_plural: Option<&str>,
+    dativ_singular: Option<&str>,
+    dativ_plural: Option<&str>,
+    akkusativ_singular: Option<&str>,
+    akkusativ_plural: Option<&str>,
+) {
     let new_post = NewEntry {
         nominativ_singular,
         genus,
+        nominativ_plural,
+        genitiv_singular,
+        genitiv_plural,
+        dativ_singular,
+        dativ_plural,
+        akkusativ_singular,
+        akkusativ_plural,
     };
 
     diesel::insert_into(derdiedas::table)

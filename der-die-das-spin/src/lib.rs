@@ -1,37 +1,66 @@
-use serde::Serialize;
-use spin_sdk::{http::Fields, sqlite::Connection};
-
-use {
-    bindings::wasi::http::incoming_handler,
-    futures::SinkExt,
-    spin_sdk::{
-        http::{IncomingRequest, Method, OutgoingResponse, ResponseOutparam},
-        http_component,
-    },
+use anyhow::Result;
+use serde::{Deserialize, Serialize};
+use spin_sdk::{
+    http::{IntoResponse, Request, Response, Router},
+    http_component,
+    sqlite::{Connection, Value},
 };
 
-mod bindings {
-    wit_bindgen::generate!({
-        path: "../spin-fileserver/examples/wit",
-        world: "delegate",
-        with: {
-            "wasi:http/types@0.2.0": ::spin_sdk::wit::wasi::http::types,
-        }
-    });
+// Helper for returning the query results as JSON
+#[derive(Serialize, Deserialize, Debug, Clone)]
+struct DerDieDas {
+    nominativ_singular: String,
+    genus: String,
 }
 
-async fn h() -> Option<Vec<u8>> {
-    let connection = Connection::open_default().unwrap();
+#[derive(Serialize, Deserialize, Debug, Clone)]
+struct GameSession {
+    session_id: String,
+    player1_id: String,
+    player2_id: Option<String>,
+    player1_score: i32,
+    player2_score: i32,
+    current_word_index: i32,
+    game_mode: String,
+    created_at: i64,
+}
 
-    let rowset = connection
-        .execute(
-            "SELECT nominativ_singular, genus FROM derdiedas
-                   ORDER BY RANDOM() LIMIT 1",
-            &[],
-        )
-        .expect("msg");
+#[derive(Serialize, Deserialize)]
+struct CreateSessionRequest {
+    player_name: String,
+    game_mode: String,
+}
 
-    let todos: Vec<_> = rowset
+#[derive(Serialize, Deserialize)]
+struct JoinSessionRequest {
+    session_id: String,
+    player_name: String,
+}
+
+/// Main HTTP handler using Spin SDK's Router
+#[http_component]
+fn handle_request(req: Request) -> Result<impl IntoResponse> {
+    let mut router = Router::new();
+
+    router.get("/api/entry.json", get_random_entry);
+    router.post("/api/session/create", create_session);
+    router.post("/api/session/join", join_session);
+    router.get("/api/session/:id", get_session);
+    router.post("/api/session/:id/answer", submit_answer);
+
+    Ok(router.handle(req))
+}
+
+/// Get a random German noun entry
+fn get_random_entry(_req: Request, _params: spin_sdk::http::Params) -> Result<impl IntoResponse> {
+    let connection = Connection::open_default()?;
+
+    let rowset = connection.execute(
+        "SELECT nominativ_singular, genus FROM derdiedas ORDER BY RANDOM() LIMIT 1",
+        &[],
+    )?;
+
+    let entries: Vec<DerDieDas> = rowset
         .rows()
         .map(|row| DerDieDas {
             nominativ_singular: row.get::<&str>("nominativ_singular").unwrap().to_owned(),
@@ -39,45 +68,205 @@ async fn h() -> Option<Vec<u8>> {
         })
         .collect();
 
-    Some(serde_json::to_vec(&todos).unwrap())
+    Ok(Response::builder()
+        .status(200)
+        .header("content-type", "application/json")
+        .body(serde_json::to_string(&entries)?)
+        .build())
 }
 
-// Helper for returning the query results as JSON
-#[derive(Serialize)]
-struct DerDieDas {
-    nominativ_singular: String,
-    genus: String,
+/// Create a new game session
+fn create_session(req: Request, _params: spin_sdk::http::Params) -> Result<impl IntoResponse> {
+    let body: CreateSessionRequest = serde_json::from_slice(req.body())?;
+
+    let session_id = uuid::Uuid::new_v4().to_string();
+    let player1_id = uuid::Uuid::new_v4().to_string();
+
+    let connection = Connection::open_default()?;
+
+    // Create sessions table if it doesn't exist
+    connection.execute(
+        "CREATE TABLE IF NOT EXISTS game_sessions (
+            session_id TEXT PRIMARY KEY,
+            player1_id TEXT NOT NULL,
+            player2_id TEXT,
+            player1_score INTEGER DEFAULT 0,
+            player2_score INTEGER DEFAULT 0,
+            current_word_index INTEGER DEFAULT 0,
+            game_mode TEXT NOT NULL,
+            created_at INTEGER NOT NULL
+        )",
+        &[],
+    )?;
+
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)?
+        .as_secs() as i64;
+
+    connection.execute(
+        "INSERT INTO game_sessions (session_id, player1_id, game_mode, created_at) VALUES (?, ?, ?, ?)",
+        &[
+            Value::Text(session_id.clone()),
+            Value::Text(player1_id.clone()),
+            Value::Text(body.game_mode.clone()),
+            Value::Integer(now),
+        ],
+    )?;
+
+    let session = GameSession {
+        session_id: session_id.clone(),
+        player1_id: player1_id.clone(),
+        player2_id: None,
+        player1_score: 0,
+        player2_score: 0,
+        current_word_index: 0,
+        game_mode: body.game_mode,
+        created_at: now,
+    };
+
+    Ok(Response::builder()
+        .status(200)
+        .header("content-type", "application/json")
+        .body(serde_json::to_string(&session)?)
+        .build())
 }
 
-#[http_component]
-async fn handle_request(request: IncomingRequest, response_out: ResponseOutparam) {
-    match (request.method(), request.path_with_query().as_deref()) {
-        (Method::Get, Some("/entry.json")) => {
-            let fields =
-                Fields::from_list(&[("content-type".to_owned(), b"application/json".to_vec())])
-                    .unwrap();
+/// Join an existing game session
+fn join_session(req: Request, _params: spin_sdk::http::Params) -> Result<impl IntoResponse> {
+    let body: JoinSessionRequest = serde_json::from_slice(req.body())?;
+    let player2_id = uuid::Uuid::new_v4().to_string();
 
-            let response = OutgoingResponse::new(fields);
+    let connection = Connection::open_default()?;
 
-            let mut body = response.take_body();
-            let _ = response.set_status_code(200);
-            response_out.set(response);
-            let b = h().await.unwrap();
+    connection.execute(
+        "UPDATE game_sessions SET player2_id = ? WHERE session_id = ?",
+        &[
+            Value::Text(player2_id.clone()),
+            Value::Text(body.session_id.clone()),
+        ],
+    )?;
 
-            if let Err(e) = body.send(b).await {
-                eprintln!("Error sending payload: {e}");
-            }
+    let rowset = connection.execute(
+        "SELECT * FROM game_sessions WHERE session_id = ?",
+        &[Value::Text(body.session_id.clone())],
+    )?;
+
+    let rows: Vec<_> = rowset.rows().collect();
+
+    if let Some(row) = rows.first() {
+        let session = GameSession {
+            session_id: row.get::<&str>("session_id").unwrap().to_owned(),
+            player1_id: row.get::<&str>("player1_id").unwrap().to_owned(),
+            player2_id: Some(player2_id.clone()),
+            player1_score: row.get::<i32>("player1_score").unwrap_or(0),
+            player2_score: row.get::<i32>("player2_score").unwrap_or(0),
+            current_word_index: row.get::<i32>("current_word_index").unwrap_or(0),
+            game_mode: row.get::<&str>("game_mode").unwrap().to_owned(),
+            created_at: row.get::<i64>("created_at").unwrap_or(0),
+        };
+
+        Ok(Response::builder()
+            .status(200)
+            .header("content-type", "application/json")
+            .body(serde_json::to_string(&session)?)
+            .build())
+    } else {
+        Ok(Response::builder()
+            .status(404)
+            .body("Session not found".to_string())
+            .build())
+    }
+}
+
+/// Get session details
+fn get_session(_req: Request, params: spin_sdk::http::Params) -> Result<impl IntoResponse> {
+    let session_id = params.get("id").ok_or(anyhow::anyhow!("Missing session ID"))?;
+
+    let connection = Connection::open_default()?;
+    let rowset = connection.execute(
+        "SELECT * FROM game_sessions WHERE session_id = ?",
+        &[Value::Text(session_id.to_string())],
+    )?;
+
+    let rows: Vec<_> = rowset.rows().collect();
+
+    if let Some(row) = rows.first() {
+        let player2_id = match row.get::<&str>("player2_id") {
+            Some(s) => Some(s.to_owned()),
+            None => None,
+        };
+
+        let session = GameSession {
+            session_id: row.get::<&str>("session_id").unwrap().to_owned(),
+            player1_id: row.get::<&str>("player1_id").unwrap().to_owned(),
+            player2_id,
+            player1_score: row.get::<i32>("player1_score").unwrap_or(0),
+            player2_score: row.get::<i32>("player2_score").unwrap_or(0),
+            current_word_index: row.get::<i32>("current_word_index").unwrap_or(0),
+            game_mode: row.get::<&str>("game_mode").unwrap().to_owned(),
+            created_at: row.get::<i64>("created_at").unwrap_or(0),
+        };
+
+        Ok(Response::builder()
+            .status(200)
+            .header("content-type", "application/json")
+            .body(serde_json::to_string(&session)?)
+            .build())
+    } else {
+        Ok(Response::builder()
+            .status(404)
+            .body("Session not found".to_string())
+            .build())
+    }
+}
+
+/// Submit an answer and update score
+fn submit_answer(req: Request, params: spin_sdk::http::Params) -> Result<impl IntoResponse> {
+    #[derive(Deserialize)]
+    struct AnswerRequest {
+        player_id: String,
+        correct: bool,
+    }
+
+    let session_id = params.get("id").ok_or(anyhow::anyhow!("Missing session ID"))?;
+    let body: AnswerRequest = serde_json::from_slice(req.body())?;
+
+    let connection = Connection::open_default()?;
+
+    // Get current session
+    let rowset = connection.execute(
+        "SELECT player1_id, player2_id FROM game_sessions WHERE session_id = ?",
+        &[Value::Text(session_id.to_string())],
+    )?;
+
+    let rows: Vec<_> = rowset.rows().collect();
+
+    if let Some(row) = rows.first() {
+        let player1_id = row.get::<&str>("player1_id").unwrap().to_owned();
+        let is_player1 = player1_id == body.player_id;
+
+        if body.correct {
+            let update_query = if is_player1 {
+                "UPDATE game_sessions SET player1_score = player1_score + 1 WHERE session_id = ?"
+            } else {
+                "UPDATE game_sessions SET player2_score = player2_score + 1 WHERE session_id = ?"
+            };
+
+            connection.execute(
+                update_query,
+                &[Value::Text(session_id.to_string())],
+            )?;
         }
 
-        (Method::Get, _) => {
-            // Delegate to spin-fileserver component
-            incoming_handler::handle(request, response_out.into_inner())
-        }
-
-        _ => {
-            let response = OutgoingResponse::new(Fields::new());
-            response.set_status_code(405).unwrap();
-            response_out.set(response);
-        }
+        Ok(Response::builder()
+            .status(200)
+            .header("content-type", "application/json")
+            .body(r#"{"success": true}"#.to_string())
+            .build())
+    } else {
+        Ok(Response::builder()
+            .status(404)
+            .body("Session not found".to_string())
+            .build())
     }
 }

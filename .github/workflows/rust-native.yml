@@ -28,13 +28,13 @@ jobs:
             set-safe-directory: true
             submodules: true
       - run: rustup toolchain install stable --profile minimal
+      - run: rustup target add wasm32-wasip1
       - uses: Swatinem/rust-cache@v2
       - run: |
           curl -fsSL https://developer.fermyon.com/downloads/install.sh | bash
-          cargo install cargo-component
-          cargo install wac-cli
           cargo check
-          cargo build -p dewiktionary -p  dewiktionary-importer-cli -p  dewiktionary-diesel --release
+          cargo build -p dewiktionary -p dewiktionary-importer-cli -p dewiktionary-diesel --release
+          cargo build --target wasm32-wasip1 --release -p der-die-das
           cd der-die-das-spin && ../spin build
           
   cargo-deny:

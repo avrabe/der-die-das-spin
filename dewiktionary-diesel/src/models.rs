@@ -7,6 +7,13 @@ use diesel::prelude::*;
 pub struct DerDieDas {
     pub nominativ_singular: String,
     pub genus: String,
+    pub nominativ_plural: Option<String>,
+    pub genitiv_singular: Option<String>,
+    pub genitiv_plural: Option<String>,
+    pub dativ_singular: Option<String>,
+    pub dativ_plural: Option<String>,
+    pub akkusativ_singular: Option<String>,
+    pub akkusativ_plural: Option<String>,
 }
 
 #[derive(Insertable)]
@@ -14,4 +21,11 @@ pub struct DerDieDas {
 pub struct NewEntry<'a> {
     pub nominativ_singular: &'a str,
     pub genus: &'a str,
+    pub nominativ_plural: Option<&'a str>,
+    pub genitiv_singular: Option<&'a str>,
+    pub genitiv_plural: Option<&'a str>,
+    pub dativ_singular: Option<&'a str>,
+    pub dativ_plural: Option<&'a str>,
+    pub akkusativ_singular: Option<&'a str>,
+    pub akkusativ_plural: Option<&'a str>,
 }

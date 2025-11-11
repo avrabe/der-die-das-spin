@@ -1,44 +1,139 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <title>Der Die Das</title>
-  <link rel="apple-touch-icon" sizes="57x57" href="/apple-icon-57x57.png">
-  <link rel="apple-touch-icon" sizes="60x60" href="/apple-icon-60x60.png">
-  <link rel="apple-touch-icon" sizes="72x72" href="/apple-icon-72x72.png">
-  <link rel="apple-touch-icon" sizes="76x76" href="/apple-icon-76x76.png">
-  <link rel="apple-touch-icon" sizes="114x114" href="/apple-icon-114x114.png">
-  <link rel="apple-touch-icon" sizes="120x120" href="/apple-icon-120x120.png">
-  <link rel="apple-touch-icon" sizes="144x144" href="/apple-icon-144x144.png">
-  <link rel="apple-touch-icon" sizes="152x152" href="/apple-icon-152x152.png">
-  <link rel="apple-touch-icon" sizes="180x180" href="/apple-icon-180x180.png">
-  <link rel="icon" type="image/png" sizes="192x192"  href="/android-icon-192x192.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-  <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-  <link rel="manifest" href="/manifest.json">
-  <meta name="msapplication-TileColor" content="#ffffff">
-  <meta name="msapplication-TileImage" content="/ms-icon-144x144.png">
-  <meta name="theme-color" content="#ffffff">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <script src="script.js"></script>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Der Die Das - German Article Learning Game</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-icon-180x180.png">
+    <link rel="manifest" href="manifest.json">
 </head>
 <body>
-    <h1>Der die das</h1>
-    <p><img src="ms-icon-144x144.png"/></p>
-    <!-- Add a button that calls the JavaScript function when clicked -->
-    <button class="next" onclick="loadJSON()">N&auml;chstes Wort</button>
     <div class="container">
-        <div id="genus"></div>
-        <div id="nominativ_singular" class="wort"></div>
-    </div>
-    <p><div id="aktionsart">
-    <button class="artikel" onclick="reveal('Der')">Der</button>
-    <button class="artikel" onclick="reveal('Die')">Die</button>
-    <button class="artikel" onclick="reveal('Das')">Das</button>
-    </div>
-    </p>
-    <p><div id="error"></div></p>
+        <header>
+            <h1>Der Die Das</h1>
+            <p class="subtitle">Master German Articles & Cases</p>
+        </header>
 
-  </body>
+        <!-- Mode Selection Screen -->
+        <div id="modeSelection" class="screen active">
+            <h2>Choose Your Game Mode</h2>
+            <div class="mode-grid">
+                <div class="mode-card" onclick="startPracticeMode()">
+                    <div class="mode-icon">📚</div>
+                    <h3>Practice Mode</h3>
+                    <p>Learn at your own pace</p>
+                </div>
+
+                <div class="mode-card" onclick="startTimedMode()">
+                    <div class="mode-icon">⏱️</div>
+                    <h3>Timed Challenge</h3>
+                    <p>2 minutes - Get as many as you can!</p>
+                </div>
+
+                <div class="mode-card" onclick="showCreateSession()">
+                    <div class="mode-icon">🎮</div>
+                    <h3>Create Multiplayer</h3>
+                    <p>Challenge a friend!</p>
+                </div>
+
+                <div class="mode-card" onclick="showJoinSession()">
+                    <div class="mode-icon">🔗</div>
+                    <h3>Join Multiplayer</h3>
+                    <p>Join a friend's game</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Create Multiplayer Session Screen -->
+        <div id="createSession" class="screen">
+            <h2>Create Multiplayer Game</h2>
+            <div class="form-container">
+                <input type="text" id="createPlayerName" placeholder="Your Name" maxlength="20">
+                <button onclick="createMultiplayerSession()" class="btn-primary">Create Game</button>
+                <button onclick="backToModeSelection()" class="btn-secondary">Back</button>
+            </div>
+        </div>
+
+        <!-- Join Multiplayer Session Screen -->
+        <div id="joinSession" class="screen">
+            <h2>Join Multiplayer Game</h2>
+            <div class="form-container">
+                <input type="text" id="joinPlayerName" placeholder="Your Name" maxlength="20">
+                <input type="text" id="joinSessionId" placeholder="Session ID">
+                <button onclick="joinMultiplayerSession()" class="btn-primary">Join Game</button>
+                <button onclick="backToModeSelection()" class="btn-secondary">Back</button>
+            </div>
+        </div>
+
+        <!-- Waiting for Player Screen -->
+        <div id="waitingScreen" class="screen">
+            <h2>Waiting for Opponent...</h2>
+            <div class="session-info">
+                <p>Share this Session ID:</p>
+                <div class="session-id" id="displaySessionId"></div>
+                <button onclick="copySessionId()" class="btn-copy">Copy ID</button>
+            </div>
+            <div class="spinner"></div>
+            <button onclick="cancelMultiplayer()" class="btn-secondary">Cancel</button>
+        </div>
+
+        <!-- Game Screen -->
+        <div id="gameScreen" class="screen">
+            <div class="game-header">
+                <div class="score-container">
+                    <div class="score">
+                        <span class="score-label">Score:</span>
+                        <span id="score">0</span>
+                    </div>
+                    <div id="timerDisplay" class="timer"></div>
+                    <div id="player2Score" class="score player2-score hidden">
+                        <span class="score-label">Opponent:</span>
+                        <span id="opponentScore">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="word-display">
+                <div class="article-container">
+                    <span id="genus" class="genus" hidden></span>
+                    <span id="nominativ_singular" class="word"></span>
+                </div>
+            </div>
+
+            <div class="article-buttons">
+                <button class="artikel-btn der-btn" onclick="reveal('Der')">Der</button>
+                <button class="artikel-btn die-btn" onclick="reveal('Die')">Die</button>
+                <button class="artikel-btn das-btn" onclick="reveal('Das')">Das</button>
+            </div>
+
+            <button id="nextButton" onclick="loadJSON()" class="btn-next">Nächstes Wort</button>
+            <button onclick="quitGame()" class="btn-secondary">Quit</button>
+        </div>
+
+        <!-- Results Screen -->
+        <div id="resultsScreen" class="screen">
+            <h2>Game Over!</h2>
+            <div class="results-container">
+                <div class="final-score">
+                    <h3>Your Score</h3>
+                    <div class="score-big" id="finalScore">0</div>
+                </div>
+                <div id="multiplayerResults" class="multiplayer-results hidden">
+                    <div class="final-score">
+                        <h3>Opponent Score</h3>
+                        <div class="score-big" id="opponentFinalScore">0</div>
+                    </div>
+                    <div class="winner-announcement" id="winnerText"></div>
+                </div>
+            </div>
+            <button onclick="backToModeSelection()" class="btn-primary">Play Again</button>
+        </div>
+
+        <div id="error" class="error-message"></div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
 </html>
