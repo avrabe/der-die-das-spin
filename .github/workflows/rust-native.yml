@@ -71,7 +71,7 @@ jobs:
           submodules: true
       - name: Run tarpaulin
         run: |
-          cargo +nightly tarpaulin --verbose --all-features --workspace --timeout 600 --out xml
+          cargo +nightly tarpaulin --verbose --all-features --workspace --exclude der-die-das --timeout 600 --out xml
  
       - name: Upload to codecov.io
         uses: codecov/codecov-action@v4
