@@ -34,6 +34,15 @@ Learn German articles (der/die/das) with a fun, kid-friendly game featuring capy
 - **Real German nouns** from Wiktionary
 - **Article practice** with der/die/das
 - **All text in German** for immersive learning
+- **🆕 Example sentences** with "🦫 Beispiel Satz" button for contextual learning
+
+### 🤖 Example Sentence Feature (NEW in v0.2.0!)
+- **Contextual learning**: Click "🦫 Beispiel Satz" to see words used in sentences
+- **Smart generation**: Never reveals der/die/das - uses declined forms only
+- **Instant responses**: Key-value caching for popular words
+- **Multiple variations**: 5 different sentences per word
+- **Kid-friendly**: Occasionally mentions capybaras for fun!
+- **Beautiful UI**: Animated speech bubble with bouncing capybara
 
 ### 🌐 Multiplayer Features
 - **Session-based multiplayer** with shareable IDs

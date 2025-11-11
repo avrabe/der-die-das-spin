@@ -729,6 +729,163 @@ h2::before {
     content: '🦫 ';
 }
 
-button:not(.artikel-btn)::before {
+button:not(.artikel-btn):not(.btn-example)::before {
     content: '🦫 ';
+}
+
+/* ========================================
+   Example Sentence Feature Styles
+   ======================================== */
+
+.btn-example {
+    background: linear-gradient(145deg, #6BCF7F, #4CAF50);
+    color: white;
+    border: 4px solid #2E7D32;
+    padding: 14px 28px;
+    font-size: 20px;
+    font-family: 'Comic Sans MS', cursive;
+    border-radius: 15px;
+    cursor: pointer;
+    box-shadow: 0 6px 0 #1B5E20, 0 8px 15px rgba(0, 0, 0, 0.3);
+    transition: all 0.2s;
+    margin: 15px auto;
+    display: block;
+    font-weight: bold;
+}
+
+.btn-example:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 0 #1B5E20, 0 10px 20px rgba(0, 0, 0, 0.4);
+}
+
+.btn-example:active {
+    transform: translateY(3px);
+    box-shadow: 0 3px 0 #1B5E20, 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.btn-example:disabled {
+    background: linear-gradient(145deg, #ccc, #aaa);
+    border-color: #888;
+    box-shadow: 0 4px 0 #666;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.sentence-container {
+    margin: 20px auto;
+    max-width: 550px;
+    animation: slideIn 0.4s ease-out;
+}
+
+.sentence-container.hidden {
+    display: none;
+}
+
+.capybara-speech-bubble {
+    background: linear-gradient(145deg, #FFF9E6, #FFFACD);
+    border: 5px solid #8B4513;
+    border-radius: 20px;
+    padding: 20px 25px;
+    position: relative;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+    animation: bounceIn 0.5s ease-out;
+}
+
+.speech-header {
+    font-size: 18px;
+    font-weight: bold;
+    color: #8B4513;
+    font-family: 'Comic Sans MS', cursive;
+    display: block;
+    margin-bottom: 12px;
+    text-align: left;
+}
+
+.sentence-text {
+    font-size: 22px;
+    color: #333;
+    line-height: 1.6;
+    font-family: 'Comic Sans MS', cursive;
+    margin: 0;
+    font-weight: 600;
+    text-align: left;
+}
+
+.speech-bubble-tail {
+    position: absolute;
+    bottom: -20px;
+    left: 60px;
+    width: 0;
+    height: 0;
+    border-left: 18px solid transparent;
+    border-right: 18px solid transparent;
+    border-top: 20px solid #8B4513;
+}
+
+.speech-bubble-tail::after {
+    content: '';
+    position: absolute;
+    bottom: 3px;
+    left: -14px;
+    width: 0;
+    height: 0;
+    border-left: 14px solid transparent;
+    border-right: 14px solid transparent;
+    border-top: 16px solid #FFF9E6;
+}
+
+.loading-capybara {
+    text-align: center;
+    padding: 10px;
+    font-size: 48px;
+    animation: wiggle 1s ease-in-out infinite;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes bounceIn {
+    0% {
+        opacity: 0;
+        transform: scale(0.5);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+    70% {
+        transform: scale(0.95);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Mobile responsiveness for sentence feature */
+@media (max-width: 768px) {
+    .btn-example {
+        font-size: 18px;
+        padding: 12px 24px;
+    }
+
+    .sentence-text {
+        font-size: 19px;
+    }
+
+    .speech-header {
+        font-size: 16px;
+    }
+
+    .sentence-container {
+        max-width: 90%;
+        margin: 15px auto;
+    }
 }

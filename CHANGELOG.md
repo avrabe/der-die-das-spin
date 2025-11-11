@@ -7,15 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2025-11-11
+
 ### Added
+- 🤖 **Example Sentence Feature** - NEW!
+  - "🦫 Beispiel Satz" button on game screen
+  - Generates contextual German example sentences for each word
+  - Smart sentence generation that never reveals der/die/das
+  - Key-value caching for instant responses on repeated words
+  - Beautiful animated speech bubble display
+  - Loading animation with wiggling capybara
+  - Multiple sentence variations per word (5 cached per word)
+  - Works with all 4 game modes
 - Automated release workflow via GitHub Actions
 - Comprehensive release documentation (RELEASE.md)
 - Verification script for local testing (verify_game.sh)
 - Quick start guide (QUICKSTART.md)
 - Capybara & Roblox themed documentation (CAPYBARA_THEME.md)
+- Spin features research documentation (SPIN_FEATURES_RESEARCH.md)
+- AI implementation plan (IMPLEMENTATION_PLAN_AI_SENTENCES.md)
+
+### Technical
+- Added sentence generation module with curated German templates
+- Implemented key-value storage for sentence caching
+- New REST API endpoint: GET /api/sentence/:word
+- Comprehensive test coverage for sentence generation
+- Zero clippy warnings
+- All tests passing
 
 ### Changed
 - Release artifacts now include checksums and complete tarball
+- Updated spin.toml to enable key_value_stores
+- Enhanced frontend with example sentence UI
+- Improved educational value through contextual learning
 
 ## [0.1.0] - 2025-11-11
 
