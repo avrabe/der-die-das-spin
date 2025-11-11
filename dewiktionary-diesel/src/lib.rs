@@ -12,6 +12,7 @@ pub fn establish_connection(database_url: &str) -> SqliteConnection {
 
 use crate::models::NewEntry;
 
+#[allow(clippy::too_many_arguments)]
 pub fn create_entry(
     conn: &mut SqliteConnection,
     nominativ_singular: &str,
