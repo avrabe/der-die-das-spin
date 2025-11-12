@@ -18,3 +18,9 @@ der-die-das-spin/.spin/logs/
 .DS_Store
 
 dewiktionary*
+
+# Generated database files
+*.db
+*.db.backup*
+data/
+der-die-das-spin/words.json
