@@ -49,6 +49,7 @@ fn handle_request(req: Request) -> Result<impl IntoResponse> {
     router.get("/api/entry.json", get_random_entry);
     router.get("/api/sentence/:word", get_example_sentence);
     router.get("/api/syllable-quiz", get_syllable_quiz);
+    router.get("/api/category-quiz", get_category_quiz);
     router.post("/api/session/create", create_session);
     router.post("/api/session/join", join_session);
     router.get("/api/session/:id", get_session);
@@ -437,6 +438,81 @@ fn get_syllable_quiz(_req: Request, _params: spin_sdk::http::Params) -> Result<i
         Ok(Response::builder()
             .status(404)
             .body("No words with syllable data found".to_string())
+            .build())
+    }
+}
+
+/// Get a category quiz question
+fn get_category_quiz(_req: Request, _params: spin_sdk::http::Params) -> Result<impl IntoResponse> {
+    #[derive(Serialize)]
+    struct CategoryQuiz {
+        word: String,
+        category: String,
+        difficulty: i32,
+        options: Vec<String>,
+    }
+
+    let connection = Connection::open_default()?;
+
+    // Get a random word with category data
+    let rowset = connection.execute(
+        "SELECT nominativ_singular, category, difficulty
+         FROM derdiedas
+         WHERE category IS NOT NULL
+         ORDER BY RANDOM() LIMIT 1",
+        &[],
+    )?;
+
+    let rows: Vec<_> = rowset.rows().collect();
+
+    if let Some(row) = rows.first() {
+        let word = row.get::<&str>("nominativ_singular").unwrap().to_owned();
+        let category = row.get::<&str>("category").unwrap().to_owned();
+        let difficulty = row.get::<i32>("difficulty").unwrap_or(1);
+
+        // Get 3 other random categories as distractors
+        let distractor_rowset = connection.execute(
+            "SELECT DISTINCT category FROM derdiedas
+             WHERE category IS NOT NULL AND category != ?
+             ORDER BY RANDOM() LIMIT 3",
+            &[Value::Text(category.clone())],
+        )?;
+
+        let mut options: Vec<String> = distractor_rowset
+            .rows()
+            .map(|r| r.get::<&str>("category").unwrap().to_owned())
+            .collect();
+
+        // Add correct answer
+        options.push(category.clone());
+
+        // Shuffle options using a simple algorithm
+        use std::time::SystemTime;
+        let seed = SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)?
+            .as_secs() as usize;
+
+        for i in (1..options.len()).rev() {
+            let j = (seed + i) % (i + 1);
+            options.swap(i, j);
+        }
+
+        let quiz = CategoryQuiz {
+            word,
+            category,
+            difficulty,
+            options,
+        };
+
+        Ok(Response::builder()
+            .status(200)
+            .header("content-type", "application/json")
+            .body(serde_json::to_string(&quiz)?)
+            .build())
+    } else {
+        Ok(Response::builder()
+            .status(404)
+            .body("No words with category data found".to_string())
             .build())
     }
 }

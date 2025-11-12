@@ -49,6 +49,12 @@
                     <h3>Silben-Puzzle</h3>
                     <p>Zähle die Silben der Wörter!</p>
                 </div>
+
+                <div class="mode-card" onclick="startCategoryQuiz()">
+                    <div class="mode-icon">⚡🦫</div>
+                    <h3>Kategorie-Blitz</h3>
+                    <p>Ordne Wörter in Kategorien ein!</p>
+                </div>
             </div>
         </div>
 
@@ -213,10 +219,32 @@
             <button onclick="backToModeSelection()" class="btn-secondary" style="margin-top: 20px;">Zurück zum Menü</button>
         </div>
 
+        <!-- Kategorie-Blitz Game Screen -->
+        <div id="categoryQuiz" class="screen">
+            <h2>⚡ Kategorie-Blitz 🦫</h2>
+            <div class="game-stats">
+                <div>Punkte: <span id="categoryScore">0</span></div>
+                <div>Richtig: <span id="categoryCorrect">0</span> / Falsch: <span id="categoryWrong">0</span></div>
+            </div>
+
+            <div class="question-container">
+                <h3>Zu welcher Kategorie gehört dieses Wort?</h3>
+                <div id="categoryWord" class="word-display">---</div>
+                <div id="categoryDifficulty" class="difficulty-badge">Schwierigkeit: -</div>
+            </div>
+
+            <div id="categoryButtons" class="category-buttons"></div>
+
+            <div id="categoryFeedback" class="feedback"></div>
+
+            <button onclick="backToModeSelection()" class="btn-secondary" style="margin-top: 20px;">Zurück zum Menü</button>
+        </div>
+
         <div id="error" class="error-message"></div>
     </div>
 
     <script src="script.js"></script>
     <script src="syllable-puzzle.js"></script>
+    <script src="category-quiz.js"></script>
 </body>
 </html>
