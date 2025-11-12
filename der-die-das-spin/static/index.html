@@ -43,6 +43,12 @@
                     <h3>Multiplayer Beitreten</h3>
                     <p>Tritt einem Spiel bei!</p>
                 </div>
+
+                <div class="mode-card" onclick="startSyllablePuzzle()">
+                    <div class="mode-icon">🧩🦫</div>
+                    <h3>Silben-Puzzle</h3>
+                    <p>Zähle die Silben der Wörter!</p>
+                </div>
             </div>
         </div>
 
@@ -180,9 +186,37 @@
             <button onclick="backToModeSelection()" class="btn-primary">Nochmal Spielen!</button>
         </div>
 
+        <!-- Silben-Puzzle Game Screen -->
+        <div id="syllablePuzzle" class="screen">
+            <h2>🧩 Silben-Puzzle 🦫</h2>
+            <div class="game-stats">
+                <div>Punkte: <span id="syllableScore">0</span></div>
+                <div>Richtig: <span id="syllableCorrect">0</span> / Falsch: <span id="syllableWrong">0</span></div>
+            </div>
+
+            <div class="question-container">
+                <h3>Wie viele Silben hat dieses Wort?</h3>
+                <div id="syllableWord" class="word-display">---</div>
+                <div id="syllableDifficulty" class="difficulty-badge">Schwierigkeit: -</div>
+            </div>
+
+            <div class="answer-buttons">
+                <button class="btn-answer" onclick="checkSyllableAnswer(1)">1 Silbe</button>
+                <button class="btn-answer" onclick="checkSyllableAnswer(2)">2 Silben</button>
+                <button class="btn-answer" onclick="checkSyllableAnswer(3)">3 Silben</button>
+                <button class="btn-answer" onclick="checkSyllableAnswer(4)">4 Silben</button>
+                <button class="btn-answer" onclick="checkSyllableAnswer(5)">5+ Silben</button>
+            </div>
+
+            <div id="syllableFeedback" class="feedback"></div>
+
+            <button onclick="backToModeSelection()" class="btn-secondary" style="margin-top: 20px;">Zurück zum Menü</button>
+        </div>
+
         <div id="error" class="error-message"></div>
     </div>
 
     <script src="script.js"></script>
+    <script src="syllable-puzzle.js"></script>
 </body>
 </html>
