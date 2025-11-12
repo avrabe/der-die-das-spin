@@ -60,18 +60,43 @@ fn handle_request(req: Request) -> Result<impl IntoResponse> {
 fn get_random_entry(_req: Request, _params: spin_sdk::http::Params) -> Result<impl IntoResponse> {
     let connection = Connection::open_default()?;
 
+    // Try new 'words' table first, fall back to legacy 'derdiedas' table
     let rowset = connection.execute(
-        "SELECT nominativ_singular, genus FROM derdiedas ORDER BY RANDOM() LIMIT 1",
+        "SELECT word as nominativ_singular,
+                CASE article
+                    WHEN 'der' THEN 'm'
+                    WHEN 'die' THEN 'f'
+                    WHEN 'das' THEN 'n'
+                    ELSE 'm'
+                END as genus
+         FROM words
+         ORDER BY RANDOM()
+         LIMIT 1",
         &[],
-    )?;
+    );
 
-    let entries: Vec<DerDieDas> = rowset
-        .rows()
-        .map(|row| DerDieDas {
-            nominativ_singular: row.get::<&str>("nominativ_singular").unwrap().to_owned(),
-            genus: row.get::<&str>("genus").unwrap().to_owned(),
-        })
-        .collect();
+    let entries: Vec<DerDieDas> = match rowset {
+        Ok(rs) => rs.rows()
+            .map(|row| DerDieDas {
+                nominativ_singular: row.get::<&str>("nominativ_singular").unwrap().to_owned(),
+                genus: row.get::<&str>("genus").unwrap().to_owned(),
+            })
+            .collect(),
+        Err(_) => {
+            // Fall back to legacy table
+            let rowset_legacy = connection.execute(
+                "SELECT nominativ_singular, genus FROM derdiedas ORDER BY RANDOM() LIMIT 1",
+                &[],
+            )?;
+
+            rowset_legacy.rows()
+                .map(|row| DerDieDas {
+                    nominativ_singular: row.get::<&str>("nominativ_singular").unwrap().to_owned(),
+                    genus: row.get::<&str>("genus").unwrap().to_owned(),
+                })
+                .collect()
+        }
+    };
 
     Ok(Response::builder()
         .status(200)
@@ -94,15 +119,44 @@ fn get_example_sentence(_req: Request, params: spin_sdk::http::Params) -> Result
 
     // First, look up the genus for this word from the database
     let connection = Connection::open_default()?;
-    let rowset = connection.execute(
-        "SELECT genus FROM derdiedas WHERE nominativ_singular = ? LIMIT 1",
-        &[Value::Text(word.to_string())],
-    )?;
 
-    let rows: Vec<_> = rowset.rows().collect();
-    let genus = rows.first()
-        .and_then(|row| row.get::<&str>("genus"))
-        .unwrap_or("m"); // Default to masculine if not found
+    // Try new 'words' table first
+    let rowset = connection.execute(
+        "SELECT CASE article
+                    WHEN 'der' THEN 'm'
+                    WHEN 'die' THEN 'f'
+                    WHEN 'das' THEN 'n'
+                    ELSE 'm'
+                END as genus
+         FROM words WHERE word = ? LIMIT 1",
+        &[Value::Text(word.to_string())],
+    );
+
+    let genus = match rowset {
+        Ok(rs) => {
+            let rows: Vec<_> = rs.rows().collect();
+            rows.first()
+                .and_then(|row| row.get::<&str>("genus"))
+                .unwrap_or("m")
+        },
+        Err(_) => {
+            // Fall back to legacy table
+            let rowset_legacy = connection.execute(
+                "SELECT genus FROM derdiedas WHERE nominativ_singular = ? LIMIT 1",
+                &[Value::Text(word.to_string())],
+            );
+
+            match rowset_legacy {
+                Ok(rs) => {
+                    let rows: Vec<_> = rs.rows().collect();
+                    rows.first()
+                        .and_then(|row| row.get::<&str>("genus"))
+                        .unwrap_or("m")
+                },
+                Err(_) => "m"
+            }
+        }
+    };
 
     // Try to get from cache first
     let cache_key = format!("sentence:{}", word.to_lowercase());
