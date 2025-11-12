@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2025-11-12
+
+### Added
+- 🎮 **Kid-Friendly Multiplayer Session IDs**
+  - Short, memorable animal codes replace long UUIDs
+  - Format: ANIMAL-NUMBER (e.g., "WOLF-52", "KATZE-31", "BIENE-98")
+  - Easy for kids to type and share
+  - Max 11 characters vs 36 for UUIDs
+  - 20 German animals × 99 numbers = 1,980 combinations
+  - Alternative formats available: simple numbers, words, mixed, capybara-themed
+- Complete kid_id module with multiple ID generation strategies
+- MULTIPLAYER_IDS.md documentation
+- Comprehensive test coverage for ID generation
+
+### Fixed
+- spin.toml WASM path for workspace builds (../target/)
+- Local development setup now works correctly
+
+### Changed
+- Session IDs now use animal codes by default
+- Improved multiplayer UX for children
+
+### Removed
+- Unused spin-fileserver git submodule
+- Obsolete compose.yml file
+- Legacy documentation files (CAPYBARA_THEME.md, etc.)
+
 ## [0.2.0] - 2025-11-11
 
 ### Added
