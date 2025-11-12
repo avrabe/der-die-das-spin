@@ -8,7 +8,7 @@ license = "MIT"
 
 [dependencies]
 parse_mediawiki_dump_reboot = "1.0.1"
-bzip2  = "0.4.4"
+bzip2  = "0.5.0"
 tracing = { workspace = true }
 tracing-subscriber = "0.3.17"
 clap = { version = "4.4.7", features = ["cargo", "derive", "env"] }
