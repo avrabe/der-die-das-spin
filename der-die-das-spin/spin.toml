@@ -12,7 +12,7 @@ route = "/api/..."
 component = "der-die-das-api"
 
 [component.der-die-das-api]
-source = "target/wasm32-wasip1/release/der_die_das.wasm"
+source = "../target/wasm32-wasip1/release/der_die_das.wasm"
 allowed_outbound_hosts = []
 sqlite_databases = ["default"]
 key_value_stores = ["default"]

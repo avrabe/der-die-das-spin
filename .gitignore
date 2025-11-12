@@ -13,6 +13,8 @@ Cargo.lock
 # MSVC Windows builds of rustc generate these, which store debugging information
 *.pdb
 der-die-das.sqlite3
-der-die-das-spin/.spin/sqlite_db.db
+der-die-das-spin/.spin/sqlite_*
 der-die-das-spin/.spin/logs/
 .DS_Store
+
+dewiktionary*

@@ -8,6 +8,7 @@ use spin_sdk::{
 };
 
 mod sentences;
+mod kid_id;
 
 // Helper for returning the query results as JSON
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -146,7 +147,8 @@ fn get_example_sentence(_req: Request, params: spin_sdk::http::Params) -> Result
 fn create_session(req: Request, _params: spin_sdk::http::Params) -> Result<impl IntoResponse> {
     let body: CreateSessionRequest = serde_json::from_slice(req.body())?;
 
-    let session_id = uuid::Uuid::new_v4().to_string();
+    // Use kid-friendly short ID instead of UUID
+    let session_id = kid_id::generate_default();
     let player1_id = uuid::Uuid::new_v4().to_string();
 
     let connection = Connection::open_default()?;
