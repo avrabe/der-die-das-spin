@@ -48,6 +48,7 @@ fn handle_request(req: Request) -> Result<impl IntoResponse> {
 
     router.get("/api/entry.json", get_random_entry);
     router.get("/api/sentence/:word", get_example_sentence);
+    router.get("/api/syllable-quiz", get_syllable_quiz);
     router.post("/api/session/create", create_session);
     router.post("/api/session/join", join_session);
     router.get("/api/session/:id", get_session);
@@ -394,6 +395,48 @@ fn submit_answer(req: Request, params: spin_sdk::http::Params) -> Result<impl In
         Ok(Response::builder()
             .status(404)
             .body("Session not found".to_string())
+            .build())
+    }
+}
+
+/// Get a syllable quiz question
+fn get_syllable_quiz(_req: Request, _params: spin_sdk::http::Params) -> Result<impl IntoResponse> {
+    #[derive(Serialize)]
+    struct SyllableQuiz {
+        word: String,
+        syllable_count: i32,
+        difficulty: i32,
+    }
+
+    let connection = Connection::open_default()?;
+
+    // Get a random word with syllable data
+    let rowset = connection.execute(
+        "SELECT nominativ_singular, syllable_count, difficulty
+         FROM derdiedas
+         WHERE syllable_count IS NOT NULL AND syllable_count > 0
+         ORDER BY RANDOM() LIMIT 1",
+        &[],
+    )?;
+
+    let rows: Vec<_> = rowset.rows().collect();
+
+    if let Some(row) = rows.first() {
+        let quiz = SyllableQuiz {
+            word: row.get::<&str>("nominativ_singular").unwrap().to_owned(),
+            syllable_count: row.get::<i32>("syllable_count").unwrap_or(1),
+            difficulty: row.get::<i32>("difficulty").unwrap_or(1),
+        };
+
+        Ok(Response::builder()
+            .status(200)
+            .header("content-type", "application/json")
+            .body(serde_json::to_string(&quiz)?)
+            .build())
+    } else {
+        Ok(Response::builder()
+            .status(404)
+            .body("No words with syllable data found".to_string())
             .build())
     }
 }
