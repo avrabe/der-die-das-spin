@@ -1,3 +1,0 @@
-[submodule "spin-fileserver"]
-	path = spin-fileserver
-	url = https://github.com/fermyon/spin-fileserver.git
