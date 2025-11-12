@@ -121,7 +121,7 @@ fn get_example_sentence(_req: Request, params: spin_sdk::http::Params) -> Result
     let connection = Connection::open_default()?;
 
     // Try new 'words' table first
-    let rowset = connection.execute(
+    let genus = match connection.execute(
         "SELECT CASE article
                     WHEN 'der' THEN 'm'
                     WHEN 'die' THEN 'f'
@@ -130,30 +130,28 @@ fn get_example_sentence(_req: Request, params: spin_sdk::http::Params) -> Result
                 END as genus
          FROM words WHERE word = ? LIMIT 1",
         &[Value::Text(word.to_string())],
-    );
-
-    let genus = match rowset {
+    ) {
         Ok(rs) => {
             let rows: Vec<_> = rs.rows().collect();
             rows.first()
                 .and_then(|row| row.get::<&str>("genus"))
-                .unwrap_or("m")
+                .map(|s| s.to_owned())
+                .unwrap_or_else(|| "m".to_string())
         },
         Err(_) => {
             // Fall back to legacy table
-            let rowset_legacy = connection.execute(
+            match connection.execute(
                 "SELECT genus FROM derdiedas WHERE nominativ_singular = ? LIMIT 1",
                 &[Value::Text(word.to_string())],
-            );
-
-            match rowset_legacy {
+            ) {
                 Ok(rs) => {
                     let rows: Vec<_> = rs.rows().collect();
                     rows.first()
                         .and_then(|row| row.get::<&str>("genus"))
-                        .unwrap_or("m")
+                        .map(|s| s.to_owned())
+                        .unwrap_or_else(|| "m".to_string())
                 },
-                Err(_) => "m"
+                Err(_) => "m".to_string()
             }
         }
     };
@@ -171,17 +169,26 @@ fn get_example_sentence(_req: Request, params: spin_sdk::http::Params) -> Result
             .as_secs() as usize % cached_sentences.len();
         (cached_sentences[idx].clone(), true)
     } else {
-        // Generate new sentences and cache them
-        let new_sentences = sentences::generate_sentences(word, genus, 5);
-        let sentence_texts: Vec<String> = new_sentences.iter()
-            .map(|s| s.sentence.clone())
-            .collect();
+        // Generate ONE new sentence using LLM (generating 5 causes timeout)
+        // Each request will add to the cache, building up over time
+        let new_sentence = sentences::generate_sentences(word, &genus, 1);
+        let sentence_text = new_sentence[0].sentence.clone();
 
-        // Cache the sentences
-        let cache_data = serde_json::to_vec(&sentence_texts)?;
-        store.set(&cache_key, &cache_data)?;
+        // Get existing cache or create new
+        let mut cached_sentences: Vec<String> = if let Ok(Some(data)) = store.get(&cache_key) {
+            serde_json::from_slice(&data).unwrap_or_default()
+        } else {
+            Vec::new()
+        };
 
-        (sentence_texts[0].clone(), false)
+        // Add new sentence if not already cached (max 5 variations)
+        if !cached_sentences.contains(&sentence_text) && cached_sentences.len() < 5 {
+            cached_sentences.push(sentence_text.clone());
+            let cache_data = serde_json::to_vec(&cached_sentences)?;
+            store.set(&cache_key, &cache_data)?;
+        }
+
+        (sentence_text, false)
     };
 
     let response = SentenceResponse {
