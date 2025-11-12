@@ -8,7 +8,13 @@ let gameState = {
     timerInterval: null,
     timeRemaining: 120, // 2 minutes for timed mode
     currentWord: null,
-    waitingInterval: null
+    waitingInterval: null,
+    // Timed mode settings
+    endCondition: 'time', // 'time', 'points', 'questions'
+    targetValue: 120, // seconds, points, or questions count
+    questionsAnswered: 0,
+    // Practice mode tracking for easter egg
+    practiceCorrectCount: 0
 };
 
 // Screen Management
@@ -41,6 +47,8 @@ function resetGameState() {
     gameState.opponentScore = 0;
     gameState.timeRemaining = 120;
     gameState.currentWord = null;
+    gameState.questionsAnswered = 0;
+    gameState.practiceCorrectCount = 0;
     document.getElementById('score').textContent = '0';
     document.getElementById('genus').hidden = true;
     document.getElementById('nextButton').disabled = true;
@@ -57,15 +65,45 @@ function startPracticeMode() {
 }
 
 // Timed Challenge Mode
-function startTimedMode() {
+function showTimedSettings() {
+    showScreen('timedSettings');
+}
+
+function startTimedModeWithSettings() {
+    const endCondition = document.querySelector('input[name="endCondition"]:checked').value;
+
     gameState.mode = 'timed';
+    gameState.endCondition = endCondition;
+    gameState.questionsAnswered = 0;
     resetGameState();
-    gameState.timeRemaining = 120;
+
+    if (endCondition === 'time') {
+        const minutes = parseInt(document.getElementById('timeLimit').value);
+        gameState.timeRemaining = minutes * 60;
+        gameState.targetValue = minutes * 60;
+    } else if (endCondition === 'points') {
+        gameState.targetValue = parseInt(document.getElementById('pointsLimit').value);
+    } else if (endCondition === 'questions') {
+        gameState.targetValue = parseInt(document.getElementById('questionsLimit').value);
+    }
+
     showScreen('gameScreen');
-    document.getElementById('timerDisplay').style.display = 'block';
     document.getElementById('player2Score').classList.add('hidden');
-    startTimer();
+
+    // Show timer only for time-based mode
+    if (endCondition === 'time') {
+        document.getElementById('timerDisplay').style.display = 'block';
+        startTimer();
+    } else {
+        document.getElementById('timerDisplay').style.display = 'none';
+    }
+
     loadJSON();
+}
+
+function startTimedMode() {
+    // Legacy function - redirect to settings
+    showTimedSettings();
 }
 
 function startTimer() {
@@ -104,19 +142,12 @@ function showJoinSession() {
 }
 
 async function createMultiplayerSession() {
-    const playerName = document.getElementById('createPlayerName').value.trim();
-
-    if (!playerName) {
-        showError('Please enter your name');
-        return;
-    }
-
     try {
         const response = await fetch('/api/session/create', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                player_name: playerName,
+                player_name: 'Spieler',
                 game_mode: 'multiplayer'
             })
         });
@@ -139,11 +170,10 @@ async function createMultiplayerSession() {
 }
 
 async function joinMultiplayerSession() {
-    const playerName = document.getElementById('joinPlayerName').value.trim();
     const sessionId = document.getElementById('joinSessionId').value.trim();
 
-    if (!playerName || !sessionId) {
-        showError('Please enter both name and session ID');
+    if (!sessionId) {
+        showError('Bitte gib eine Session ID ein');
         return;
     }
 
@@ -153,7 +183,7 @@ async function joinMultiplayerSession() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 session_id: sessionId,
-                player_name: playerName
+                player_name: 'Spieler'
             })
         });
 
@@ -166,7 +196,7 @@ async function joinMultiplayerSession() {
 
         startMultiplayerGame();
     } catch (error) {
-        showError('Failed to join game: ' + error.message);
+        showError('Session nicht gefunden: ' + error.message);
     }
 }
 
@@ -327,6 +357,14 @@ async function reveal(artikel) {
         gameState.score++;
         document.getElementById("score").textContent = gameState.score;
 
+        // Track correct answers in practice mode for easter egg
+        if (gameState.mode === 'practice') {
+            gameState.practiceCorrectCount++;
+            if (gameState.practiceCorrectCount === 67) {
+                triggerKakaMode();
+            }
+        }
+
         // Submit score for multiplayer
         if (gameState.mode === 'multiplayer') {
             await submitAnswer(true);
@@ -336,6 +374,20 @@ async function reveal(artikel) {
 
         if (gameState.mode === 'multiplayer') {
             await submitAnswer(false);
+        }
+    }
+
+    // Track questions answered in timed mode
+    if (gameState.mode === 'timed') {
+        gameState.questionsAnswered++;
+
+        // Check end conditions for timed mode
+        if (gameState.endCondition === 'points' && gameState.score >= gameState.targetValue) {
+            endTimedGame();
+            return;
+        } else if (gameState.endCondition === 'questions' && gameState.questionsAnswered >= gameState.targetValue) {
+            endTimedGame();
+            return;
         }
     }
 
@@ -398,6 +450,65 @@ async function showExampleSentence() {
         button.textContent = '🦫 Nochmal versuchen';
         button.disabled = false;
     }
+}
+
+// Kaka Mode Easter Egg - 67 correct answers in practice mode
+function triggerKakaMode() {
+    const emoji = '💩';
+    const duration = 3000; // 3 seconds
+    const particleCount = 50;
+
+    // Create container for particles
+    const container = document.createElement('div');
+    container.id = 'kakaRain';
+    container.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        pointer-events: none;
+        z-index: 9999;
+    `;
+    document.body.appendChild(container);
+
+    // Create falling particles
+    for (let i = 0; i < particleCount; i++) {
+        const particle = document.createElement('div');
+        particle.textContent = emoji;
+        particle.style.cssText = `
+            position: absolute;
+            font-size: ${Math.random() * 30 + 20}px;
+            left: ${Math.random() * 100}vw;
+            top: -50px;
+            animation: kakaFall ${Math.random() * 2 + 2}s linear forwards;
+            animation-delay: ${Math.random() * 1}s;
+        `;
+        container.appendChild(particle);
+    }
+
+    // Add CSS animation if not exists
+    if (!document.getElementById('kakaAnimationStyle')) {
+        const style = document.createElement('style');
+        style.id = 'kakaAnimationStyle';
+        style.textContent = `
+            @keyframes kakaFall {
+                to {
+                    transform: translateY(100vh) rotate(360deg);
+                    opacity: 0;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    // Show achievement message
+    showError('🎉 KAKA-MODUS AKTIVIERT! 67 Richtig! 💩🦫');
+
+    // Remove after duration
+    setTimeout(() => {
+        container.remove();
+    }, duration + 3000);
 }
 
 function showError(message) {
