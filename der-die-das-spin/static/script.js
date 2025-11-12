@@ -393,6 +393,19 @@ async function reveal(artikel) {
 
     // Enable next button
     document.getElementById('nextButton').disabled = false;
+
+    // Auto-advance: immediate if correct, 2 seconds if wrong
+    if (isCorrect) {
+        // Correct answer: auto-advance immediately
+        setTimeout(() => {
+            loadJSON();
+        }, 500); // Small delay to show the correct answer
+    } else {
+        // Wrong answer: wait 2 seconds before auto-advancing
+        setTimeout(() => {
+            loadJSON();
+        }, 2000);
+    }
 }
 
 async function submitAnswer(correct) {
