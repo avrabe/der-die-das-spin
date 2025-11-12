@@ -1,7 +1,7 @@
-/// Example sentence generation module
+/// Example sentence generation module using Spin Serverless AI
 /// Provides contextual German sentences for learning without revealing der/die/das
-use rand::Rng;
 use serde::{Deserialize, Serialize};
+use spin_sdk::llm;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ExampleSentence {
@@ -9,95 +9,93 @@ pub struct ExampleSentence {
     pub translation: Option<String>,
 }
 
-/// Sentence templates that work with different genders
-/// Uses declined forms (dem, den, am, beim, etc.) to avoid revealing the article
-const SENTENCE_TEMPLATES: &[&[&str]] = &[
-    // Templates that work with masculine (m)
-    &[
-        "Ein Capybara sitzt neben dem {}.",
-        "Ich sehe einen {} am Horizont.",
-        "Das Kind spielt mit dem {}.",
-        "Wir gehen zum {}.",
-        "Die Capybaras lieben den {}!",
-    ],
-    // Templates that work with feminine (f)
-    &[
-        "Ein Capybara springt über die {}.",
-        "Ich sehe eine {} im Garten.",
-        "Das Kind malt die {} bunt an.",
-        "Wir gehen zur {}.",
-        "Die Capybaras mögen die {} sehr!",
-    ],
-    // Templates that work with neuter (n)
-    &[
-        "Ein Capybara steht neben dem {}.",
-        "Ich sehe ein {} am Himmel.",
-        "Das Kind beobachtet das {}.",
-        "Wir gehen zum {}.",
-        "Die Capybaras lieben das {}!",
-    ],
-];
+/// Generate a contextual German sentence using LLM
+/// The LLM understands the word meaning and creates appropriate sentences
+pub fn generate_sentence_with_llm(word: &str, genus: &str) -> Result<String, String> {
+    // Create a prompt that asks the LLM to generate a contextual German sentence
+    // Important: We tell it NOT to reveal the article
+    let prompt = format!(
+        "Du bist ein Deutschlehrer für Kinder. Erstelle einen einfachen deutschen Satz mit dem Wort '{}'.
 
-/// Universal templates that work with all genders using prepositions
-const UNIVERSAL_TEMPLATES: &[&str] = &[
-    "Capybaras lieben {}!",
-    "Heute lernen wir über {}.",
-    "Kennst du {}?",
-    "Erzähl mir von {}!",
-    "Schau mal, dort ist {}!",
-];
+WICHTIG:
+- Benutze das Wort '{}' in einem natürlichen Kontext
+- Der Satz soll zeigen, wie das Wort verwendet wird
+- Verwende NICHT den Nominativ-Artikel (der/die/das) am Anfang
+- Verwende stattdessen andere Formen: dem, den, zur, zum, beim, etc.
+- Oder verwende das Wort ohne Artikel: mit {}, für {}, etc.
+- Der Satz soll für Kinder verständlich sein (maximal 10 Wörter)
+- Erwähne manchmal ein Capybara für Spaß!
+- Gib NUR den Satz zurück, keine Erklärungen
 
-/// Get the template index for a given genus
-fn genus_to_index(genus: &str) -> usize {
+Beispiele guter Sätze:
+- \"Ein Capybara sitzt beim Baum.\"
+- \"Ich gehe zur Schule.\"
+- \"Das Kind spielt mit dem Ball.\"
+
+Jetzt erstelle einen Satz mit '{}':",
+        word, word, word, word, word
+    );
+
+    // Use Spin's LLM inference
+    match llm::infer(llm::InferencingModel::Llama2Chat, &prompt) {
+        Ok(result) => {
+            let sentence = result.text.trim().to_string();
+
+            // Basic validation: ensure sentence doesn't reveal the article
+            if sentence.starts_with("Der ") || sentence.starts_with("Die ") || sentence.starts_with("Das ") {
+                // Fallback to a safe template if LLM reveals the article
+                return Ok(generate_fallback_sentence(word, genus));
+            }
+
+            // Ensure the sentence contains the word
+            if !sentence.contains(word) {
+                return Ok(generate_fallback_sentence(word, genus));
+            }
+
+            Ok(sentence)
+        }
+        Err(e) => {
+            // If LLM fails, fall back to template-based generation
+            eprintln!("LLM inference failed: {:?}, using fallback", e);
+            Ok(generate_fallback_sentence(word, genus))
+        }
+    }
+}
+
+/// Fallback sentence generation using simple templates
+/// Used when LLM is unavailable or returns invalid results
+fn generate_fallback_sentence(word: &str, genus: &str) -> String {
     match genus {
-        "m" => 0, // masculine
-        "f" => 1, // feminine
-        "n" => 2, // neuter
-        _ => 0,   // default to masculine
+        "m" => format!("Ein Capybara sitzt neben dem {}.", word),
+        "f" => format!("Ein Capybara springt über die {}.", word),
+        "n" => format!("Ein Capybara steht neben dem {}.", word),
+        _ => format!("Capybaras lieben {}!", word),
     }
 }
 
-/// Generate an example sentence for a given word
-pub fn generate_sentence(word: &str, genus: &str, variation: usize) -> ExampleSentence {
-    let mut rng = rand::thread_rng();
-
-    // 70% chance to use gender-specific template, 30% universal
-    let use_specific = rng.gen_bool(0.7);
-
-    let sentence = if use_specific && !genus.is_empty() {
-        let idx = genus_to_index(genus);
-        let templates = SENTENCE_TEMPLATES[idx];
-        let template_idx = (variation + rng.gen_range(0..templates.len())) % templates.len();
-        let template = templates[template_idx];
-
-        // Convert word to appropriate case
-        let word_form = match genus {
-            "m" => word.to_string(), // Keep nominative for accusative/dative context
-            "f" => word.to_string(),
-            "n" => word.to_string(),
-            _ => word.to_string(),
-        };
-
-        template.replace("{}", &word_form)
-    } else {
-        // Use universal template
-        let template_idx = (variation + rng.gen_range(0..UNIVERSAL_TEMPLATES.len()))
-            % UNIVERSAL_TEMPLATES.len();
-        let template = UNIVERSAL_TEMPLATES[template_idx];
-        template.replace("{}", word)
-    };
-
-    ExampleSentence {
-        sentence,
-        translation: None, // Can add English translations later
-    }
-}
-
-/// Get multiple sentence variations for a word
+/// Get multiple sentence variations for a word using LLM
 pub fn generate_sentences(word: &str, genus: &str, count: usize) -> Vec<ExampleSentence> {
-    (0..count)
-        .map(|i| generate_sentence(word, genus, i))
-        .collect()
+    let mut sentences = Vec::new();
+
+    for _ in 0..count {
+        match generate_sentence_with_llm(word, genus) {
+            Ok(sentence) => {
+                sentences.push(ExampleSentence {
+                    sentence,
+                    translation: None,
+                });
+            }
+            Err(_) => {
+                // Use fallback on error
+                sentences.push(ExampleSentence {
+                    sentence: generate_fallback_sentence(word, genus),
+                    translation: None,
+                });
+            }
+        }
+    }
+
+    sentences
 }
 
 #[cfg(test)]
@@ -105,30 +103,24 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_generate_sentence_masculine() {
-        let sentence = generate_sentence("Tisch", "m", 0);
-        assert!(!sentence.sentence.is_empty());
-        assert!(sentence.sentence.contains("Tisch"));
-        // Should not reveal "Der" at the start
-        assert!(!sentence.sentence.starts_with("Der Tisch"));
+    fn test_fallback_sentence_masculine() {
+        let sentence = generate_fallback_sentence("Tisch", "m");
+        assert!(sentence.contains("Tisch"));
+        assert!(!sentence.starts_with("Der Tisch"));
     }
 
     #[test]
-    fn test_generate_sentence_feminine() {
-        let sentence = generate_sentence("Katze", "f", 0);
-        assert!(!sentence.sentence.is_empty());
-        assert!(sentence.sentence.contains("Katze"));
-        // Should not reveal "Die" at the start
-        assert!(!sentence.sentence.starts_with("Die Katze"));
+    fn test_fallback_sentence_feminine() {
+        let sentence = generate_fallback_sentence("Katze", "f");
+        assert!(sentence.contains("Katze"));
+        assert!(!sentence.starts_with("Die Katze"));
     }
 
     #[test]
-    fn test_generate_sentence_neuter() {
-        let sentence = generate_sentence("Haus", "n", 0);
-        assert!(!sentence.sentence.is_empty());
-        assert!(sentence.sentence.contains("Haus"));
-        // Should not reveal "Das" at the start
-        assert!(!sentence.sentence.starts_with("Das Haus"));
+    fn test_fallback_sentence_neuter() {
+        let sentence = generate_fallback_sentence("Haus", "n");
+        assert!(sentence.contains("Haus"));
+        assert!(!sentence.starts_with("Das Haus"));
     }
 
     #[test]
@@ -142,7 +134,7 @@ mod tests {
     }
 
     #[test]
-    fn test_no_article_revelation() {
+    fn test_no_article_revelation_in_fallback() {
         let words = vec![
             ("Tisch", "m"),
             ("Katze", "f"),
@@ -152,21 +144,11 @@ mod tests {
         ];
 
         for (word, genus) in words {
-            let sentences = generate_sentences(word, genus, 10);
-            for s in sentences {
-                // None of these patterns should appear at the start
-                assert!(!s.sentence.starts_with(&format!("Der {}", word)));
-                assert!(!s.sentence.starts_with(&format!("Die {}", word)));
-                assert!(!s.sentence.starts_with(&format!("Das {}", word)));
-            }
+            let sentence = generate_fallback_sentence(word, genus);
+            // None of these patterns should appear at the start
+            assert!(!sentence.starts_with(&format!("Der {}", word)));
+            assert!(!sentence.starts_with(&format!("Die {}", word)));
+            assert!(!sentence.starts_with(&format!("Das {}", word)));
         }
-    }
-
-    #[test]
-    fn test_genus_to_index() {
-        assert_eq!(genus_to_index("m"), 0);
-        assert_eq!(genus_to_index("f"), 1);
-        assert_eq!(genus_to_index("n"), 2);
-        assert_eq!(genus_to_index("unknown"), 0); // defaults to masculine
     }
 }
